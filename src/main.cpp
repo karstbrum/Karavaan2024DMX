@@ -3,27 +3,55 @@
 // own libraries
 #include "bulb_auto_mode.h"
 #include "led_auto_mode.h"
-#include "ps3_interpreter.h"
+
+// other libraries
+#include "esp_dmx.h"
+#include<WiFi.h>
+#include<esp_now.h>
 
 // Sampling time (Ts)
-#define Ts 40
+#define Ts 1000
 
 // max numbers for settings
 #define MAXCOLORS 10
 #define MAXMODES 16 // to be defined
-#define MINBPM 101
-#define MAXBPM 199
+
+// setup DMX port and pins
+const dmx_port_t dmx_num = DMX_NUM_2;
+// DMX start address
+const int dmx_start_addr = 0;
+// number of states for LED and discoball
+const int led_dmx_size = 32; // muliples of 16
+const int disco_dmx_size = led_dmx_size;
+// DMX size (number of addresses)
+const int dmx_size = led_dmx_size+disco_dmx_size;
+// DMX pins (UART)
+const int tx_pin = 17;
+const int rx_pin = 16;
+const int rts_pin = 21;
+
+// communication to discoball
+// address to send data to:
+uint8_t disco_address[] = {0x30, 0xAE, 0xA4, 0x96, 0x5C, 0xF0};
+
+// led states 
+uint8_t LEDstates[dmx_size];
+// discoball states 
+uint8_t discostates[dmx_size];
+// define dmx received data
+uint8_t dmx_data[dmx_size+1];
 
 // set up the different cores
 TaskHandle_t ControllerTask;
 TaskHandle_t LEDTask;
 
-uint16_t LEDsPerSide[] = {18, 18, 18, 18, 18, 18, 18, 18, 18, 18, 18, 18, 18, 18, 18, 18, 18, 18, 18, 18, 18, 18,
-                         12, 13, 17, 17, 12, 12, 13, 13, 17,
-                         12, 13, 13, 12, 12, 13, 13, 13, 13, 12};
+uint16_t LEDsPerSide[] = {18, 18, 18, 18, 18, 18, 18, 18, 18, 18,
+                          18, 18, 18, 18, 18, 18, 18, 18, 18, 18, 
+                          12, 13, 17, 17, 12, 12, 13, 13, 17,
+                          12, 13, 13, 12, 12, 13, 13, 13, 13, 12};
 uint8_t numSides = sizeof(LEDsPerSide)/sizeof(uint16_t);
-uint8_t sidesPerPin[] = {22, 9, 10};
-uint8_t LEDPins[] = {26, 13, 14};
+uint8_t sidesPerPin[] = {10, 10, 9, 10};
+uint8_t LEDPins[] = {25, 26, 13, 14};
 uint8_t numPins = sizeof(LEDPins);
 Pixels LED(numSides, LEDsPerSide, numPins, sidesPerPin, LEDPins, Ts);
 
@@ -43,17 +71,6 @@ Bulbgroups* Bulb_pointer = &Bulb;
 // Time spent in the main loop
 int loopTime = 0;
 
-// time to automatically switch to auto mode in milliseconds
-int auto_switch_time = 120000;
-
-// random timer
-int random_timer = 0; 
-int random_time_switch = 30000;
-
-
-// check if switched to controller
-bool controller_switch = true;
-
 // define states 
 struct {
   uint8_t BPM = 120;
@@ -69,211 +86,23 @@ void set_initial_states(){
   LED.setColor(states.color);
   LED.setDimmer(states.brightness);
   Bulb.setDimmer(states.brightness/4);
-  // set default states, sync with controller
-  ctrl.default_settings(states.BPM, states.mode, states.color, states.brightness, 
-  MINBPM, MAXBPM, MAXMODES, MAXCOLORS);
   
 }
 
-void start_controller(){ 
-
-  // search for controller with this address
-  char address[] = "aa:bb:cc:dd:ee:ff";
-  setup_controller(address);
-
-  // set the controller objects for controlling lights
-  ctrl.set_objects(LED_pointer, Bulb_pointer);
-
-}
-
+// sync states with DMX controller if input changed
 void sync_states(){
-  if (states.BPM != ctrl.states.BPM){
-    states.BPM = ctrl.states.BPM;
-    LED.setBPM(states.BPM);
-    Bulb.setBPM(states.BPM);
-  }
-  if (states.mode != ctrl.states.mode){
-    states.mode = ctrl.states.mode;
-    // no need to switch mode, check in loop constantly
-  }
-  if (states.color != ctrl.states.color){
-    states.color = ctrl.states.color;
-    LED.setColor(states.color);
-  }
-  if (states.brightness != ctrl.states.brightness){
-    states.brightness = ctrl.states.brightness;
-    LED.setDimmer(states.brightness);
-    Bulb.setDimmer(states.brightness/4);
-  }
-}
 
-// sync index of bulb & led by setting to 0
-void sync_index(){
-  LED.pulseIndex = 0;
-  Bulb.pulseIndex = 0;
-}
-
-// define all auto functions
-void auto_functions(){
-
-  // define mode used, to switch also in random mode
-  static uint8_t mode_used;
-  static uint8_t prev_mode_used;
-  
-  // define mode that is used
-  bool select_random = (states.mode == MAXMODES) ? true : false;
-  if (select_random){
-    if (millis() - random_timer > random_time_switch){
-      mode_used = random(MAXMODES-1);
-      random_timer = millis();
+  // write DMX data to LED states
+  for (int i=0; i<dmx_size/16; i++){
+    
+    for (int j=0; j<8; j++){ 
+      // write first 8 states to LEDstates
+      LEDstates[i*8+j] = dmx_data[i*16+j+1];
+      // write next 8 states to discostates
+      discostates[i*8+j] = dmx_data[i*16+j+8+1];
     }
-  } else{
-    mode_used = states.mode;
+    
   }
-  
-  // sync if mode is different
-  if (mode_used != prev_mode_used){
-    sync_index();
-  }
-
-  // switch between modes
-  switch (mode_used){
-    case 0: {// set all to static
-      LED.setColor(states.color);
-      Bulb.staticValue();
-      break; }
-    case 1: {// pulse with same color with fade
-      LED.freqdiv = 2;
-      Bulb.freqdiv = 2;
-      LED.pulseSameColor(states.color,1);
-      Bulb.travelSides(1);
-      break;}
-    case 2: {// pulse to other coler with fade
-      LED.freqdiv = 2;
-      Bulb.freqdiv = 2;
-      LED.pulseToOtherColor(1,1);
-      Bulb.travelSides(1);
-      break;}
-    case 3: {// travel up and down wiht band of 20% pixels, 3 bulbs with fading brightness
-      uint8_t clusters[] = {2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 2, 2, 2, 2, 2};
-      int Direction[] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, -1, 1, -1, -1, 1, 1, -1, 1};
-      uint8_t numClusters = sizeof(clusters);
-      LED.freqdiv = 2;
-      Bulb.freqdiv = 2;
-      LED.upDown(0.2, states.color, 0, 0, numClusters, clusters, 1, Direction);
-      Bulb.upDown(1, 1);
-      break;}   
-    case 4: {// travel up and down wiht band of 20% pixels, 3 bulbs with fading brightness
-      uint8_t clusters[] = {2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 2, 2, 2, 2, 2};
-      int Direction[] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, -1, 1, -1, -1, 1, 1, -1, 1};
-      uint8_t numClusters = sizeof(clusters);
-      int bulbDirection[] = {-1, -1};
-      LED.freqdiv = 2;
-      Bulb.freqdiv = 2;
-      LED.upDown(0.2, states.color, 0, 0, numClusters, clusters, 1, Direction);
-      Bulb.upDown(1, 1, 0, 0, true, bulbDirection);
-      break;}   
-    case 5 : { // single random letter or 2 or 3 poles flashing in random color, single random flashing bulb per pole
-      uint8_t clusters[] = {4, 4, 6, 4, 4, 4, 5, 4, 6};
-      uint8_t numClusters = sizeof(clusters);
-      LED.freqdiv = 2;
-      Bulb.freqdiv = 2;
-      LED.travelSides(states.color, 1, 0, 1, numClusters, clusters, 0, 1);
-      Bulb.flashingBulbs(1, 1, 1);
-      break;}  
-    case 6 : {// leds fill up in wave, poles with phase updown
-      LED.freqdiv = 2;
-      Bulb.freqdiv = 2;
-      uint8_t clusters[] = {2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 2, 2, 2, 2, 2};
-      int Direction[] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, -1, 1, -1, -1, 1, 1, -1, 1};
-      uint8_t numClusters = sizeof(clusters);
-      float phase_led[numClusters];
-      for (uint8_t k=0; k<numClusters; k++){
-        phase_led[k] = static_cast<float>(k)/static_cast<float>(numClusters);
-      }
-      float phase_bulb[] = {0, 0.5};
-      LED.fillUp(states.color, 0, 0, numClusters, clusters, 1, Direction, 1, phase_led);
-      Bulb.upDown(2, 1, 0, 0, 0, Direction, 1, phase_bulb);
-      break;} 
-    case 7 : {// leds fill up in wave, poles with phase updown
-      LED.freqdiv = 2;
-      Bulb.freqdiv = 2;
-      uint8_t clusters[] = {2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 2, 2, 2, 2, 2};
-      int Direction[] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, -1, 1, -1, -1, 1, 1, -1, 1};
-      uint8_t numClusters = sizeof(clusters);
-      float phase_led[numClusters];
-      for (uint8_t k=0; k<numClusters; k++){
-        phase_led[k] = -static_cast<float>(k)/static_cast<float>(numClusters);
-      }
-      float phase_bulb[] = {0, 0.5};
-      LED.fillUp(states.color, 0, 0, numClusters, clusters, 1, Direction, 1, phase_led);
-      Bulb.upDown(2, 1, 0, 0, 0, Direction, 1, phase_bulb);
-      break;} 
-    case 8: {// travel up and down wiht band of 20% pixels inverse, 3 bulbs with fading brightness
-      uint8_t clusters[] = {2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 2, 2, 2, 2, 2};
-      int Direction[] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, -1, 1, -1, -1, 1, 1, -1, 1};
-      uint8_t numClusters = sizeof(clusters);
-      int bulbDirection[] = {-1, -1};
-      LED.freqdiv = 2;
-      Bulb.freqdiv = 2;
-      LED.upDown(0.2, states.color, 0, 0, numClusters, clusters, 1, Direction, true);
-      Bulb.upDown(1, 1, 0, 0, true, bulbDirection);
-      break;} 
-    case 9 : { // 50% chance flashing pixels, 30% flashing chance for all bulbs
-      uint8_t color2 = (states.color == 0) ? color2 = 1 : states.color;
-      LED.flashingPixels(states.color, color2, 30);
-      Bulb.flashingBulbs(1, 0, 0, 50);
-      break;}  
-    case 10 : { // wave of 1 letter with positive direction, single random flashing bulb per pole
-      LED.freqdiv = 2;
-      Bulb.freqdiv = 2;
-      LED.travelingWave(states.color, 1, 1, 0.5);
-      Bulb.flashingBulbs(1, 1, 1);
-      break;}
-    case 11 : { // wave of 1 letter with negative direction, single random flashing bulb per pole
-      LED.freqdiv = 2;
-      Bulb.freqdiv = 2;
-      LED.travelingWave(states.color, 1, -1, 0.5);
-      Bulb.flashingBulbs(1, 1, 1);
-      break;}
-    case 12: {// random 50% pole fillboth, single flashing bulb
-      uint8_t clusters[] = {2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 2, 2, 2, 2, 2};
-      uint8_t numClusters = sizeof(clusters);
-      LED.freqdiv = 2;
-      Bulb.freqdiv = 2;
-      LED.fillBoth(states.color, 0.5, 0.8, 70, false, numClusters, clusters, false);
-      Bulb.flashingBulbs(1, 1, 1);
-      break;}   
-    case 13: {// random 50% pole fillboth, random position, single flashing bulb
-      uint8_t clusters[] = {2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 2, 2, 2, 2, 2};
-      uint8_t numClusters = sizeof(clusters);
-      LED.freqdiv = 2;
-      Bulb.freqdiv = 2;
-      LED.fillBoth(states.color, 0.5, 0.8, 50, true, numClusters, clusters, false);
-      Bulb.flashingBulbs(1, 1, 1);
-      break;}   
-    // negative and positive fillup
-    case 14: {// random 50% pole fillboth, single flashing bulb
-      uint8_t clusters[] = {2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 2, 2, 2, 2, 2};
-      uint8_t numClusters = sizeof(clusters);
-      int Direction[] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, -1, 1, -1, -1, 1, 1, -1, 1};
-      LED.freqdiv = 2;
-      Bulb.freqdiv = 2;
-      LED.fillUp(states.color, 0, 0, numClusters, clusters, true, Direction, false, {}, false);
-      Bulb.flashingBulbs(1, 1, 1);
-      break;}   
-    case 15: {// random 50% pole fillboth, random position, single flashing bulb
-      uint8_t clusters[] = {2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 3, 2, 2, 2, 2, 2};
-      uint8_t numClusters = sizeof(clusters);
-      int Direction[] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, -1, 1, -1, -1, 1, 1, -1, 1};
-      LED.freqdiv = 2;
-      Bulb.freqdiv = 2;
-      LED.fillUp(states.color, 0, 0, numClusters, clusters, true, Direction, false, {}, true);
-      Bulb.flashingBulbs(1, 1, 1);
-      break;}   
-  }
-
-  prev_mode_used = mode_used;
 
 }
 
@@ -281,10 +110,10 @@ void auto_functions(){
 void LightsTaskcode( void * pvParameters ){
 
   // set initial states
-  set_initial_states();
+  // set_initial_states();
 
-  static bool use_controller;
-  static bool prev_use_controller;
+  // static bool use_controller;
+  // static bool prev_use_controller;
 
   // another option to have a timed loop is to use vTaskDelayUntil(), have to look into it first
   for(;;){
@@ -292,53 +121,82 @@ void LightsTaskcode( void * pvParameters ){
 
       loopTime = millis();
 
-      // sync index if switched from controller 
-      if (use_controller != prev_use_controller){
-        sync_index();
+      // sync DMX numbers with LED states
+      printf("LED states:\n");
+      for (int i=0; i<led_dmx_size; i++) {
+        if (i < led_dmx_size-1){
+          printf("%i, ", LEDstates[i]);
+        } else {
+          printf("%i;\n", LEDstates[i]);
+        }
       }
-
-      prev_use_controller = use_controller;
-
-      // set the lights, do first to make sampling as equidistant as possible
-      if(!ctrl.use_controller){
-        // call auto mode
-        auto_functions();
-        use_controller = true;
-      } else {
-        // call control mode
-        ctrl.function_mode_selector();
-        use_controller = false;
-      };
-
-      // states of leds are determined, now write to leds
-      LED.activateColor();
-      // states of bulbs are determined, now write to bulbs
-      Bulb.setLevels();
-
-      // sync modes BMP etc between controller and main and update if any changed
-      sync_states();
-
-      // check if switch to auto mode after idle time controller
-      if (((millis()-ctrl.controller_use_time) > auto_switch_time) && ctrl.use_controller){
-        ctrl.use_controller = false;
+      printf("Disco states:\n");
+      for (int i=0; i<disco_dmx_size; i++) {
+        if (i < disco_dmx_size-1){
+          printf("%i, ", discostates[i]);
+        } else {
+          printf("%i;\n", discostates[i]);
+        }
       }
-
-      // allow some delay for idle task
-      vTaskDelay(5);
 
     }
 
   }
 }
 
-// Task for handling the controller on core 0
+// handle DMX on core 0
 void ControllerTaskcode( void * pvParameters ){ 
-  start_controller();
-  // start task loop to keep open
+
+  // Set device as a Wi-Fi Station
+  WiFi.mode(WIFI_STA);
+  WiFi.disconnect();
+  esp_now_init(); 
+
+  // setup receiver info to channel 0
+  esp_now_peer_info_t peerInfo;
+  memcpy(peerInfo.peer_addr, disco_address, 6);
+  peerInfo.channel = 0;  
+  peerInfo.encrypt = false;
+  esp_now_add_peer(&peerInfo);
+
+  // First, use the default DMX configuration...
+  dmx_config_t config = DMX_CONFIG_DEFAULT;
+  // set start address to 0
+  config.dmx_start_address = dmx_start_addr;
+
+  // ...install the DMX driver...
+  dmx_driver_install(dmx_num, &config, DMX_INTR_FLAGS_DEFAULT);
+
+  dmx_set_pin(dmx_num, tx_pin, rx_pin, rts_pin);
+
+  // loop and read for DMX packets
   for(;;){
-    // make space for idle task by 10ms delay, make sure esp does not crash
-    vTaskDelay(10);
+
+    dmx_packet_t packet;
+
+    if (dmx_receive(dmx_num, &packet, DMX_TIMEOUT_TICK)) {
+
+      // Check that no errors occurred.
+      if (packet.err == DMX_OK) {
+        //dmx_read(dmx_num, data, packet.size);
+        dmx_read_offset(dmx_num, dmx_start_addr, dmx_data, dmx_size);
+      } else {
+        //printf("An error occurred receiving DMX!");
+      }
+
+    } 
+
+    // sync DMX states to
+    sync_states();
+
+    // send data to disco ball
+    esp_err_t result = esp_now_send(disco_address, (uint8_t *) discostates, disco_dmx_size*sizeof(uint8_t));
+    
+    // task delay for stability
+    vTaskDelay(1);
+
   }
+
 }
 
 
@@ -371,5 +229,7 @@ void setup() {
   
 }
 
-void loop() {
+// loop can be left empty, tasks are used
+void loop() { 
+
 }
