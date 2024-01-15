@@ -21,7 +21,7 @@ const dmx_port_t dmx_num = DMX_NUM_2;
 // DMX start address
 const int dmx_start_addr = 0;
 // number of states for LED and discoball
-const int led_dmx_size = 32; // muliples of 16
+const int led_dmx_size = 32; // muliples of 8
 const int disco_dmx_size = led_dmx_size;
 // DMX size (number of addresses)
 const int dmx_size = led_dmx_size+disco_dmx_size;
@@ -32,14 +32,27 @@ const int rts_pin = 21;
 
 // communication to discoball
 // address to send data to:
-uint8_t disco_address[] = {0x30, 0xAE, 0xA4, 0x96, 0x5C, 0xF0};
+uint8_t disco_address[] = {0x0C, 0xB8, 0x15, 0x85, 0xE4, 0xE4};
 
-// led states 
+
+// led states (dmx)
 uint8_t LEDstates[dmx_size];
-// discoball states 
+// discoball states (dmx)
 uint8_t discostates[dmx_size];
 // define dmx received data
 uint8_t dmx_data[dmx_size+1];
+
+// define active states (are used by the lights)
+const uint8_t BPM = 0;
+const uint8_t DIM = 1;
+const uint8_t RED = 2;
+const uint8_t GREEN = 3;
+const uint8_t BLUE = 4;
+const uint8_t WHITE = 5;
+const uint8_t EXTRA1 = 6;
+const uint8_t EXTRA2 = 7;
+const uint8_t MODE = 8;
+uint8_t active_states[9];
 
 // set up the different cores
 TaskHandle_t ControllerTask;
@@ -71,22 +84,10 @@ Bulbgroups* Bulb_pointer = &Bulb;
 // Time spent in the main loop
 int loopTime = 0;
 
-// define states 
-struct {
-  uint8_t BPM = 120;
-  uint8_t mode = 0;
-  uint8_t color = 0;
-  float brightness = 0.7;
-  } states;
-
 // set the initial states in the objects
 void set_initial_states(){
-  LED.setBPM(states.BPM);
-  Bulb.setBPM(states.BPM);
-  LED.setColor(states.color);
-  LED.setDimmer(states.brightness);
-  Bulb.setDimmer(states.brightness/4);
-  
+  // initial BPM cannot be zero (divide by zero), the rest can remain 0
+  active_states[BPM] = 1;
 }
 
 // sync states with DMX controller if input changed
@@ -106,6 +107,72 @@ void sync_states(){
 
 }
 
+// select the correct mode and values
+// first active mode is selected by default
+void select_mode(){
+  
+  // bool for finding a non-zero state
+  bool state_found = false;
+
+  // loop through sets of 8 and check for non zero entry
+  for (int i = 0; i < led_dmx_size/8; i++){
+
+    // loop through state of the mode
+    for (int j = 0; j < 8; j++){
+      
+      if (LEDstates[i*8+j] > 0){
+        
+        // mode found at nonzero state
+        state_found = true;
+        
+        // break this loop
+        break;
+
+      }
+      
+    }
+
+    // break loop if state is found, needed for later
+    if (state_found){
+
+      // set the mode
+      active_states[MODE] = i;
+
+      break;
+
+    }
+
+  }
+
+    // if state found set all states
+    if (state_found){
+    
+      for (int j = 0; j < 8; j++){
+
+        // set the values
+        active_states[j] = LEDstates[active_states[MODE]*8+j];
+
+      }
+
+    } else {
+
+      for (int j = 0; j < 8; j++){
+
+        // set the values
+        active_states[j] = 0;
+
+      }
+
+    }
+
+}
+
+void set_constraint(){
+
+  active_states[BPM] = active_states[BPM] > 1 ? active_states[BPM] : 1;
+
+}
+
 // Task for handling the LEDs on core 1
 void LightsTaskcode( void * pvParameters ){
 
@@ -117,9 +184,23 @@ void LightsTaskcode( void * pvParameters ){
 
   // another option to have a timed loop is to use vTaskDelayUntil(), have to look into it first
   for(;;){
+
     if(millis()-loopTime >= Ts){
 
+      // reset loop time
       loopTime = millis();
+
+      // select the correct mode
+      select_mode();
+
+      // set the constraints, such as minimum BPM
+      set_constraint();
+
+      Serial.print(active_states[MODE]);
+      Serial.print(", ");
+      Serial.println(active_states[BPM]);
+
+      
 
       // sync DMX numbers with LED states
       printf("LED states:\n");
@@ -130,14 +211,14 @@ void LightsTaskcode( void * pvParameters ){
           printf("%i;\n", LEDstates[i]);
         }
       }
-      printf("Disco states:\n");
-      for (int i=0; i<disco_dmx_size; i++) {
-        if (i < disco_dmx_size-1){
-          printf("%i, ", discostates[i]);
-        } else {
-          printf("%i;\n", discostates[i]);
-        }
-      }
+      // printf("Disco states:\n");
+      // for (int i=0; i<disco_dmx_size; i++) {
+      //   if (i < disco_dmx_size-1){
+      //     printf("%i, ", discostates[i]);
+      //   } else {
+      //     printf("%i;\n", discostates[i]);
+      //   }
+      // }
 
     }
 
