@@ -158,6 +158,18 @@ void set_constraint()
   active_states[BPM] = active_states[BPM] > 1 ? active_states[BPM] : 1;
 }
 
+void setmode(){
+  switch (active_states[MODE])
+    {
+    case 0: // static color
+      LED.setColor(0);
+      break;
+    
+    default:
+      break;
+    }
+}
+
 // Task for handling the LEDs on core 1
 void LightsTaskcode(void *pvParameters)
 {
@@ -188,15 +200,7 @@ void LightsTaskcode(void *pvParameters)
       LED.setBPM(active_states[BPM]);
 
       // set mode
-      switch (active_states[MODE])
-      {
-      case 0: // static color
-        LED.setColor(0);
-        break;
-      
-      default:
-        break;
-      }
+      setmode();
 
     }
   }

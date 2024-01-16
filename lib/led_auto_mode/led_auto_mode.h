@@ -26,9 +26,6 @@ class Pixels {
         // display current color
         void activateColor();
  
-        // set color
-        void setColor(uint8_t colorIndex, float dim = 1);
-
         // change the color of a first index
         void changeColor(uint8_t W, uint8_t R, uint8_t G, uint8_t B);
 
@@ -38,41 +35,14 @@ class Pixels {
         // beats per minute
         void setBPM(float BPM_);
 
-        // pulsating modes
-        void pulseSameColor(uint8_t colorIndex, bool fade = 0, float onValue = 0.4);
 
-        // travelling sides
-        void travelSides(uint8_t colorIndex, bool fade = 0, float onValue = 0.6, int direction = 1, uint8_t numClusters_ = 0, uint8_t clusters_[MAXSIDES_L] = {}, 
-            bool overlapColor = 0, bool randomCluster = 0);
+        // light functions
 
-        // some pixels up and down
-        void upDown(float tailLength, uint8_t colorIndex, bool fastUpDown = 0, bool fastOnlyUpDown = 0, uint8_t numClusters_ = 0, uint8_t clusters_[MAXSIDES_L] = {},
-            bool setDirection = 0, int direction_[MAXSIDES_L] = {}, bool inverse = 0, bool setPhase = 0, float phase[MAXSIDES_L] = {}, int inverseDirection = 1);
+        // set fixed color
+        void setColor(uint8_t colorIndex, float dim = 1);
 
-        // full wave through letters
-        void travelingWave(uint8_t colorIndex, float numOfSines = 4, int direction = 1, float offset = 0);
-
-        // flashing pixels
-        void flashingPixels(uint8_t mainColor, uint8_t flashColor, uint8_t flashChance);
-
-        // both up and down at the same time
-        void fillBoth(uint8_t colorIndex, float startPos = 0.5, float lightSize = 0.2, uint8_t flashChance = 100, bool randPos = 0, 
-            uint8_t numClusters_ = 0, uint8_t clusters_[MAXSIDES_L] = {}, bool inverse = 0);
-
-        // fill up and empty
-        void fillUp(uint8_t colorIndex, bool fastUpDown = 0, bool fastOnlyUpDown = 0, 
-            uint8_t numClusters_ = 0, uint8_t clusters_[MAXSIDES_L] = {}, bool setDirection = 0, int direction_[MAXSIDES_L] = {}, bool setPhase = 0, float phase[MAXSIDES_L] = {},
-            int inverseDirection = 1);
-
-        // set sides on or off
-        void setCluster(uint8_t colorIndex, bool use_sides[MAXSIDES_L] = {});
-
-        // set sides on or off
-        void switchCluster(uint8_t color1, uint8_t color2, bool use_sides1[MAXSIDES_L] = {}, bool use_sides2[MAXSIDES_L] = {});
-
-        // travel around (used for sticks)
-        void travelAround(int direction, uint8_t numColors, uint8_t colors[MAXSIDES_L], uint8_t numClusters, uint8_t clusters[MAXSIDES_L], float cluster_locations[MAXSIDES_L],  
-            float horizontal_size = 0.1, float vertical_size = 1, bool horizontal_fade = true, bool vertical_fade = true, bool use_horizontal_pos = false, float horizontal_pos = 0, float vertical_pos = 0.5);
+        // select sideson (relative) sides to turn on, with a relative ammount of face
+        void strobo(uint8_t colorIndex, uint8_t numClusters_ = 0, uint8_t clusters_[MAXSIDES_L] = {}, float fadetime, float ontime, float clusterson);
 
         // variables
         int sideIndex = 0;
@@ -96,6 +66,10 @@ class Pixels {
         float BPM = 100;
         float Ts;
 
+        // used for selection random clusters
+        bool boolvector[MAXSIDES_L];
+
+        //
         uint8_t pulseColorIndex = 0;
 
         // RGBW class (self made)
