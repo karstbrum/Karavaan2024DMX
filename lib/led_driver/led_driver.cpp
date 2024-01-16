@@ -66,9 +66,12 @@ void RGBW::changeAddedColor(uint8_t W, uint8_t R, uint8_t G, uint8_t B, uint8_t 
     colors[colorIndex][1] = R;
     colors[colorIndex][2] = G;
     colors[colorIndex][3] = B;
+
 }
 
 void RGBW::setColorsAll(uint8_t color, float extraDim) {
+
+    Serial.printf("W: %.0f, R: %.0f, G: %.0f, B: %.0f\n", colors[color][0], colors[color][1], colors[color][2], colors[color][3]);
 
     for (uint16_t k = 0; k < numLEDs; k++) {
 

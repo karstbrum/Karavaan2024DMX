@@ -46,51 +46,22 @@ Pixels::Pixels(uint8_t numSides_, uint16_t pixelsPerSide_[], uint8_t numPins_, u
     srand(static_cast <unsigned> (time(0)));
 };
 
-void Pixels::defineFirstColors() { //colors defined clockwise circle -> rainbow definition?
-    strip->addColor(255,   0,   0,   0); //warm white 0
-    strip->addColor(  0, 255,   0,   0); //red 1
-    strip->addColor(  0,   0, 255,   0); //green 2
-    strip->addColor(  0,   0,   0, 255); //blue 3
-    strip->addColor(  0, 255,   0, 128); //rose 4
-    strip->addColor(  0,   0, 128, 255); //azure 5
-    strip->addColor(  0, 255, 200,   0); //yellow 6
-    strip->addColor(  0, 180,   0, 255); //violet 7 
-    strip->addColor(  0,   0, 255, 80); //spring green 8  
-    strip->addColor(  0, 255,  80,   0); //orange 9
+void Pixels::defineFirstColors() { 
+    strip->addColor(0,   0,   0,   0); //warm white 0
+};
+
+void Pixels::changeColor(uint8_t W, uint8_t R, uint8_t G, uint8_t B){
+    //Serial.printf("W: %i, R: %i, G: %i, B: %i\n", W, R, G, B);
+    strip->changeAddedColor(W, R, G, B, 0);
 };
 
 void Pixels::setBPM(float BPM_) {
     BPM = BPM_;
-}
+};
 
 void Pixels::setDimmer(float dimmerValue) {
     strip->prevDimmer = strip->dimmer;
     strip->dimmer = dimmerValue;
-};
-
-// dimmer funtions
-void Pixels::dimUp(float increment) {
-
-    strip->prevDimmer = strip->dimmer;
-
-    if (strip->dimmer <= (1 - increment)) {
-        strip->dimmer += increment;
-    }
-    else {
-        strip->dimmer = 1;
-    };
-};
-
-void Pixels::dimDown(float increment) {
-
-    strip->prevDimmer = strip->dimmer;
-
-    if (strip->dimmer >= increment) {
-        strip->dimmer -= increment;
-    }
-    else {
-        strip->dimmer = 0;
-    };
 };
 
 // set color
@@ -114,83 +85,6 @@ void Pixels::pulseSameColor(uint8_t colorIndex, bool fade, float onValue) {
     }
     
     strip->setColorsAll(colorIndex, dimValue);
-
-}
-
-// pulsating color fade range
-void Pixels::pulseFadeColor(uint8_t color1, uint8_t color2, bool fade, float onValue, uint8_t numClusters_, uint8_t clusters_[]) {
-    // make a sine wave, maybe with extended max time
-
-    // define clusters
-    // numClusters_ defines the number of clusters defined in clusters_
-    // clusters_ contains the number of consecuteve sides for the cluster
-    uint8_t numClusters;
-    uint8_t pixelsPerCluster[MAXSIDES_L];
-    if (numClusters_ == 0) {
-        numClusters = numSides;
-        for (uint8_t k = 0; k < numClusters; k++) {
-            pixelsPerCluster[k] = pixelsPerSide[k];
-        }
-    }
-    else {
-        numClusters = numClusters_;
-        uint8_t sideIndex = 0;
-        for (uint8_t k = 0; k < numClusters; k++) {
-            pixelsPerCluster[k] = 0;
-            for (uint8_t l = 0; l < clusters_[k]; l++) {
-                pixelsPerCluster[k] += pixelsPerSide[sideIndex];
-                sideIndex += 1;
-            }
-        }
-    }
-
-    float Ts_ = Ts;
-    pulseIndex += (Ts_ / 1000) * (BPM / 60) / freqdiv; // Ts*BPS (s^1 * s^-1)
-    pulseIndex = (pulseIndex > 1) ? pulseIndex - 1 : pulseIndex;
-
-    float dimValue = 0.525 - 0.475 * cos(pulseIndex * 2 * PI);
-
-    if (fade == 0) {
-        dimValue = (pulseIndex > onValue) ? 1 : 0;
-    }
-
-    for (uint8_t k = 0; k < numClusters; k++) {
-
-        uint16_t startLED = k * pixelsPerCluster[k];
-        uint16_t endLED = ((k + 1) * pixelsPerCluster[k]) - 1;
-
-        strip->setRangeColorFade(startLED, endLED, color1, color2, dimValue);
-    }
-
-}
-
-// pulsating color to different color
-void Pixels::pulseToOtherColor(bool random, bool fade, float onValue) {
-
-    // make a sine wave, maybe with extended max time
-
-    float Ts_ = Ts;
-    pulseIndex += (Ts_ / 1000) * (BPM / 60) / freqdiv; // Ts*BPS (s^1 * s^-1)
-
-    if (pulseIndex > 1) {
-        pulseIndex -= 1;
-        if (random) {
-            pulseColorIndex = rand() % (strip->numOfColors - 1);
-        }
-        else {
-            pulseColorIndex += 1;
-            pulseColorIndex = (pulseColorIndex >= strip->numOfColors) ? 0 : pulseColorIndex;
-        }
-        
-    }
-
-    float dimValue = 0.525 - 0.475 * cos(pulseIndex * 2 * PI);
-
-    if (fade == 0) {
-        dimValue = (pulseIndex > onValue) ? 1 : 0;
-    }
-
-    strip->setColorsAll(pulseColorIndex, dimValue);
 
 }
 

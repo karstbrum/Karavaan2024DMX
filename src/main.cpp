@@ -1,16 +1,15 @@
 #include <Arduino.h>
 
 // own libraries
-#include "bulb_auto_mode.h"
 #include "led_auto_mode.h"
 
 // other libraries
 #include "esp_dmx.h"
-#include<WiFi.h>
-#include<esp_now.h>
+#include <WiFi.h>
+#include <esp_now.h>
 
 // Sampling time (Ts)
-#define Ts 1000
+#define Ts 100
 
 // max numbers for settings
 #define MAXCOLORS 10
@@ -24,7 +23,7 @@ const int dmx_start_addr = 0;
 const int led_dmx_size = 32; // muliples of 8
 const int disco_dmx_size = led_dmx_size;
 // DMX size (number of addresses)
-const int dmx_size = led_dmx_size+disco_dmx_size;
+const int dmx_size = led_dmx_size + disco_dmx_size;
 // DMX pins (UART)
 const int tx_pin = 17;
 const int rx_pin = 16;
@@ -34,13 +33,12 @@ const int rts_pin = 21;
 // address to send data to:
 uint8_t disco_address[] = {0x0C, 0xB8, 0x15, 0x85, 0xE4, 0xE4};
 
-
 // led states (dmx)
 uint8_t LEDstates[dmx_size];
 // discoball states (dmx)
 uint8_t discostates[dmx_size];
 // define dmx received data
-uint8_t dmx_data[dmx_size+1];
+uint8_t dmx_data[dmx_size + 1];
 
 // define active states (are used by the lights)
 const uint8_t BPM = 0;
@@ -59,133 +57,117 @@ TaskHandle_t ControllerTask;
 TaskHandle_t LEDTask;
 
 uint16_t LEDsPerSide[] = {18, 18, 18, 18, 18, 18, 18, 18, 18, 18,
-                          18, 18, 18, 18, 18, 18, 18, 18, 18, 18, 
+                          18, 18, 18, 18, 18, 18, 18, 18, 18, 18,
                           12, 13, 17, 17, 12, 12, 13, 13, 17,
                           12, 13, 13, 12, 12, 13, 13, 13, 13, 12};
-uint8_t numSides = sizeof(LEDsPerSide)/sizeof(uint16_t);
+uint8_t numSides = sizeof(LEDsPerSide) / sizeof(uint16_t);
 uint8_t sidesPerPin[] = {10, 10, 9, 10};
-uint8_t LEDPins[] = {25, 26, 13, 14};
+uint8_t LEDPins[] = {25, 26, 32, 33};
 uint8_t numPins = sizeof(LEDPins);
 Pixels LED(numSides, LEDsPerSide, numPins, sidesPerPin, LEDPins, Ts);
 
-// SETUP PART FOR BULB
-//bulbs(bulbpins, numCombinations, BulbsPerCombination, Ts);
-uint8_t bulbpins[] = {21, 22, 33, 25, 12, 
-                      15, 2, 18, 19, 32};
-uint8_t numCombinations = 2;
-uint8_t BulbsPerCombination[] = {5, 5};
-Bulbgroups Bulb(bulbpins, numCombinations, BulbsPerCombination, Ts);
-
 // pointers to objects
-Pixels* LED_pointer = &LED;
-Bulbgroups* Bulb_pointer = &Bulb;
+Pixels *LED_pointer = &LED;
 
 // TIME VARIABLES
 // Time spent in the main loop
 int loopTime = 0;
 
-// set the initial states in the objects
-void set_initial_states(){
-  // initial BPM cannot be zero (divide by zero), the rest can remain 0
-  active_states[BPM] = 1;
-}
-
 // sync states with DMX controller if input changed
-void sync_states(){
+void sync_states()
+{
 
   // write DMX data to LED states
-  for (int i=0; i<dmx_size/16; i++){
-    
-    for (int j=0; j<8; j++){ 
-      // write first 8 states to LEDstates
-      LEDstates[i*8+j] = dmx_data[i*16+j+1];
-      // write next 8 states to discostates
-      discostates[i*8+j] = dmx_data[i*16+j+8+1];
-    }
-    
-  }
+  for (int i = 0; i < dmx_size / 16; i++)
+  {
 
+    for (int j = 0; j < 8; j++)
+    {
+      // write first 8 states to LEDstates
+      LEDstates[i * 8 + j] = dmx_data[i * 16 + j + 1];
+      // write next 8 states to discostates
+      discostates[i * 8 + j] = dmx_data[i * 16 + j + 8 + 1];
+    }
+  }
 }
 
 // select the correct mode and values
 // first active mode is selected by default
-void select_mode(){
-  
+void select_mode()
+{
+
   // bool for finding a non-zero state
   bool state_found = false;
 
   // loop through sets of 8 and check for non zero entry
-  for (int i = 0; i < led_dmx_size/8; i++){
+  for (int i = 0; i < led_dmx_size / 8; i++)
+  {
 
     // loop through state of the mode
-    for (int j = 0; j < 8; j++){
-      
-      if (LEDstates[i*8+j] > 0){
-        
+    for (int j = 0; j < 8; j++)
+    {
+
+      if (LEDstates[i * 8 + j] > 0)
+      {
+
         // mode found at nonzero state
         state_found = true;
-        
+
         // break this loop
         break;
-
       }
-      
     }
 
     // break loop if state is found, needed for later
-    if (state_found){
+    if (state_found)
+    {
 
       // set the mode
       active_states[MODE] = i;
 
       break;
-
     }
-
   }
 
-    // if state found set all states
-    if (state_found){
-    
-      for (int j = 0; j < 8; j++){
+  // if state found set all states
+  if (state_found)
+  {
 
-        // set the values
-        active_states[j] = LEDstates[active_states[MODE]*8+j];
+    for (int j = 0; j < 8; j++)
+    {
 
-      }
-
-    } else {
-
-      for (int j = 0; j < 8; j++){
-
-        // set the values
-        active_states[j] = 0;
-
-      }
-
+      // set the values
+      active_states[j] = LEDstates[active_states[MODE] * 8 + j];
     }
+  }
+  else
+  {
 
+    for (int j = 0; j < 8; j++)
+    {
+
+      // set the values
+      active_states[j] = 0;
+    }
+  }
 }
 
-void set_constraint(){
-
+void set_constraint()
+{
+  // set a BPM of at least 1
   active_states[BPM] = active_states[BPM] > 1 ? active_states[BPM] : 1;
-
 }
 
 // Task for handling the LEDs on core 1
-void LightsTaskcode( void * pvParameters ){
-
-  // set initial states
-  // set_initial_states();
-
-  // static bool use_controller;
-  // static bool prev_use_controller;
+void LightsTaskcode(void *pvParameters)
+{
 
   // another option to have a timed loop is to use vTaskDelayUntil(), have to look into it first
-  for(;;){
+  for (;;)
+  {
 
-    if(millis()-loopTime >= Ts){
+    if (millis() - loopTime >= Ts)
+    {
 
       // reset loop time
       loopTime = millis();
@@ -196,47 +178,43 @@ void LightsTaskcode( void * pvParameters ){
       // set the constraints, such as minimum BPM
       set_constraint();
 
-      Serial.print(active_states[MODE]);
-      Serial.print(", ");
-      Serial.println(active_states[BPM]);
+      // set dimmer value (should be between 0 and 1)
+      LED.setDimmer((static_cast<float>(active_states[DIM]))/255);
 
+      // set color
+      LED.changeColor(active_states[WHITE], active_states[RED], active_states[GREEN], active_states[BLUE]);
+
+      // set BPM
+      LED.setBPM(active_states[BPM]);
+
+      // set mode
+      switch (active_states[MODE])
+      {
+      case 0: // static color
+        LED.setColor(0);
+        break;
       
-
-      // sync DMX numbers with LED states
-      printf("LED states:\n");
-      for (int i=0; i<led_dmx_size; i++) {
-        if (i < led_dmx_size-1){
-          printf("%i, ", LEDstates[i]);
-        } else {
-          printf("%i;\n", LEDstates[i]);
-        }
+      default:
+        break;
       }
-      // printf("Disco states:\n");
-      // for (int i=0; i<disco_dmx_size; i++) {
-      //   if (i < disco_dmx_size-1){
-      //     printf("%i, ", discostates[i]);
-      //   } else {
-      //     printf("%i;\n", discostates[i]);
-      //   }
-      // }
 
     }
-
   }
 }
 
 // handle DMX on core 0
-void ControllerTaskcode( void * pvParameters ){ 
+void ControllerTaskcode(void *pvParameters)
+{
 
   // Set device as a Wi-Fi Station
   WiFi.mode(WIFI_STA);
   WiFi.disconnect();
-  esp_now_init(); 
+  esp_now_init();
 
   // setup receiver info to channel 0
   esp_now_peer_info_t peerInfo;
   memcpy(peerInfo.peer_addr, disco_address, 6);
-  peerInfo.channel = 0;  
+  peerInfo.channel = 0;
   peerInfo.encrypt = false;
   esp_now_add_peer(&peerInfo);
 
@@ -251,66 +229,66 @@ void ControllerTaskcode( void * pvParameters ){
   dmx_set_pin(dmx_num, tx_pin, rx_pin, rts_pin);
 
   // loop and read for DMX packets
-  for(;;){
+  for (;;)
+  {
 
     dmx_packet_t packet;
 
-    if (dmx_receive(dmx_num, &packet, DMX_TIMEOUT_TICK)) {
+    if (dmx_receive(dmx_num, &packet, DMX_TIMEOUT_TICK))
+    {
 
       // Check that no errors occurred.
-      if (packet.err == DMX_OK) {
-        //dmx_read(dmx_num, data, packet.size);
+      if (packet.err == DMX_OK)
+      {
+        // dmx_read(dmx_num, data, packet.size);
         dmx_read_offset(dmx_num, dmx_start_addr, dmx_data, dmx_size);
-      } else {
-        //printf("An error occurred receiving DMX!");
       }
-
-    } 
+      else
+      {
+        // printf("An error occurred receiving DMX!");
+      }
+    }
 
     // sync DMX states to
     sync_states();
 
     // send data to disco ball
-    esp_err_t result = esp_now_send(disco_address, (uint8_t *) discostates, disco_dmx_size*sizeof(uint8_t));
-    
+    esp_err_t result = esp_now_send(disco_address, (uint8_t *)discostates, disco_dmx_size * sizeof(uint8_t));
+
     // task delay for stability
     vTaskDelay(1);
-
   }
-
 }
 
-
-void setup() {
+void setup()
+{
 
   Serial.begin(115200);
 
-  //create a task that will be executed in the Task1code() function, with priority 1 and executed on core 0
+  // create a task that will be executed in the Task1code() function, with priority 1 and executed on core 0
   xTaskCreatePinnedToCore(
-                    ControllerTaskcode, /* Task function. */
-                    "ControllerTask",   /* name of task. */
-                    20000,       /* Stack size of task */
-                    NULL,        /* parameter of the task */
-                    1,           /* priority of the task */
-                    &ControllerTask,    /* Task handle to keep track of created task */
-                    0);          /* pin task to core 0 */                  
+      ControllerTaskcode, /* Task function. */
+      "ControllerTask",   /* name of task. */
+      20000,              /* Stack size of task */
+      NULL,               /* parameter of the task */
+      1,                  /* priority of the task */
+      &ControllerTask,    /* Task handle to keep track of created task */
+      0);                 /* pin task to core 0 */
   delay(500);
 
-  //create a task that will be executed in the Task2code() function, with priority 1 and executed on core 1
+  // create a task that will be executed in the Task2code() function, with priority 1 and executed on core 1
   xTaskCreatePinnedToCore(
-                    LightsTaskcode, /* Task function. */
-                    "LightsTask",   /* name of task. */
-                    20000,       /* Stack size of task */
-                    NULL,        /* parameter of the task */
-                    1,           /* priority of the task */
-                    &LEDTask,     /* Task handle to keep track of created task */
-                    1);          /* pin task to core 1 */
-  delay(500); 
-
-  
+      LightsTaskcode, /* Task function. */
+      "LightsTask",   /* name of task. */
+      20000,          /* Stack size of task */
+      NULL,           /* parameter of the task */
+      1,              /* priority of the task */
+      &LEDTask,       /* Task handle to keep track of created task */
+      1);             /* pin task to core 1 */
+  delay(500);
 }
 
 // loop can be left empty, tasks are used
-void loop() { 
-
+void loop()
+{
 }

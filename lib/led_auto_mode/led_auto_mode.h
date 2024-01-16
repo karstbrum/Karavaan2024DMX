@@ -29,18 +29,17 @@ class Pixels {
         // set color
         void setColor(uint8_t colorIndex, float dim = 1);
 
+        // change the color of a first index
+        void changeColor(uint8_t W, uint8_t R, uint8_t G, uint8_t B);
+
         // dimmer values
         void setDimmer(float dimmerValue);
-        void dimUp(float increment = INCREMENT);
-        void dimDown(float increment = INCREMENT);
 
         // beats per minute
         void setBPM(float BPM_);
 
         // pulsating modes
         void pulseSameColor(uint8_t colorIndex, bool fade = 0, float onValue = 0.4);
-        void pulseFadeColor(uint8_t color1, uint8_t color2, bool fade = 0, float onValue = 0.4, uint8_t numClusters_ = 0, uint8_t clusters_[MAXSIDES_L] = {});
-        void pulseToOtherColor(bool random = 0, bool fade = 0, float onValue = 0.4);
 
         // travelling sides
         void travelSides(uint8_t colorIndex, bool fade = 0, float onValue = 0.6, int direction = 1, uint8_t numClusters_ = 0, uint8_t clusters_[MAXSIDES_L] = {}, 
