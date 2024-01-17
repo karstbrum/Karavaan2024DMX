@@ -54,15 +54,21 @@ void Pixels::strobo(uint8_t colorIndex, uint8_t numClusters_, uint8_t clusters_[
     float dimValue;
     // define when on
     // fully on in ontime section, fade in small section, otherwise off
+      // on
     if (pulseIndex > 0.5 - on_time/2 && pulseIndex < 0.5 + on_time/2){
         dimValue = 1;
-    } else if(pulseIndex > 0.5 - on_time/2 - fadetime && pulseIndex < 0.5 - on_time/2) {
-        dimValue = 0;
-    }   else if(pulseIndex < 0.5 + on_time/2 + fadetime && pulseIndex > 0.5 + on_time/2) {
-        dimValue = 0;
-    } else {
+    } // off to on
+    else if(pulseIndex > 0.5 - on_time/2 - fadetime && pulseIndex < 0.5 - on_time/2) {
+        dimValue = (pulseIndex - (0.5 - on_time/2 - fadetime)) / fadetime;
+    } // on to off
+    else if(pulseIndex < 0.5 + on_time/2 + fadetime && pulseIndex > 0.5 + on_time/2) {
+        dimValue = 1 - (pulseIndex - (0.5 + on_time/2)) / fadetime;
+    }  // off
+    else {
         dimValue = 0;
     }
+
+    printf("dim value: %.2f\n", dimValue);
 
     // set all strips to off before making pattern
     strip->setColorsAll(0, 0);

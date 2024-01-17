@@ -166,8 +166,8 @@ void setmode(){
       uint8_t clusters[] = {2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 4, 5, 4, 6};
       uint8_t num_clusters = sizeof(clusters)/sizeof(uint8_t);
       float fade_time = 0.05;
-      float on_time = static_cast<float>(active_states[EXTRA1])/255;
-      float on_chance = static_cast<float>(active_states[EXTRA2])/255;
+      float on_time = 1 - static_cast<float>(active_states[EXTRA1])/255;
+      float on_chance = 1 - static_cast<float>(active_states[EXTRA2])/255;
       LED.strobo(0, num_clusters, clusters, fade_time, on_time, on_chance);
       break;
     }
