@@ -1,7 +1,7 @@
 #include <Arduino.h>
 
 // own libraries
-#include "led_auto_mode.h"
+#include "led_functions.h"
 
 // other libraries
 #include "esp_dmx.h"
@@ -161,11 +161,14 @@ void set_constraint()
 void setmode(){
   switch (active_states[MODE])
     {
-    case 0: // static color
-      LED.setColor(0);
-      break;
-    
-    default:
+    case 0: // 
+      // use clusters of a pole of a full letter
+      uint8_t clusters[] = {2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 4, 5, 4, 6};
+      uint8_t num_clusters = sizeof(clusters)/sizeof(uint8_t);
+      float fade_time = 0.05;
+      float on_time = static_cast<float>(active_states[EXTRA1])/255;
+      float on_chance = static_cast<float>(active_states[EXTRA2])/255;
+      LED.strobo(0, num_clusters, clusters, fade_time, on_time, on_chance);
       break;
     }
 }
@@ -201,6 +204,9 @@ void LightsTaskcode(void *pvParameters)
 
       // set mode
       setmode();
+
+      // set the LED 
+      LED.activateColor();
 
     }
   }

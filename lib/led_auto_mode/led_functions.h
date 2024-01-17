@@ -1,5 +1,5 @@
-#ifndef LED_AUTO_MODE_H
-#define LED_AUTO_MODE_H
+#ifndef LED_FUNCTIONS_H
+#define LED_FUNCTIONS_H
  
 #if ARDUINO >= 100
 #include "Arduino.h"
@@ -37,12 +37,11 @@ class Pixels {
 
 
         // light functions
-
         // set fixed color
         void setColor(uint8_t colorIndex, float dim = 1);
 
         // select sideson (relative) sides to turn on, with a relative ammount of face
-        void strobo(uint8_t colorIndex, uint8_t numClusters_ = 0, uint8_t clusters_[MAXSIDES_L] = {}, float fadetime, float ontime, float clusterson);
+        void strobo(uint8_t colorIndex, uint8_t numClusters_ = 0, uint8_t clusters_[MAXSIDES_L] = {}, float fadetime = 0.1, float ontime = 1, float clusterson = 1);
 
         // variables
         int sideIndex = 0;
