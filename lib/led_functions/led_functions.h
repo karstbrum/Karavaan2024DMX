@@ -41,8 +41,8 @@ class Pixels {
         void setColor(uint8_t colorIndex, float dim = 1);
 
         // select sideson (relative) sides to turn on, with a relative ammount of face
-        void strobo(uint8_t colorIndex, uint8_t numClusters_ = 0, uint8_t clusters_[MAXSIDES_L] = {}, float fadetime = 0.1, float ontime = 1, float clusterson = 1);
-
+        void strobo(uint8_t colorIndex, uint8_t numClusters_ = 0, uint8_t clusters_[MAXSIDES_L] = {}, float fadetime = 0.1, float on_time = 1, float on_chance = 1);
+        
         // variables
         int sideIndex = 0;
         // variables for pulse and updown
