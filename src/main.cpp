@@ -9,7 +9,10 @@
 #include <esp_now.h>
 
 // Sampling time (Ts)
-#define Ts 100
+#define Ts 33
+
+// send time interval
+#define Tsend 250
 
 // max numbers for settings
 #define MAXCOLORS 10
@@ -68,10 +71,6 @@ Pixels LED(numSides, LEDsPerSide, numPins, sidesPerPin, LEDPins, Ts);
 
 // pointers to objects
 Pixels *LED_pointer = &LED;
-
-// TIME VARIABLES
-// Time spent in the main loop
-int loopTime = 0;
 
 // sync states with DMX controller if input changed
 void sync_states()
@@ -177,6 +176,10 @@ void setmode(){
 void LightsTaskcode(void *pvParameters)
 {
 
+  // TIME VARIABLES
+  // Time spent in the main loop
+  int loopTime = 0;
+
   // another option to have a timed loop is to use vTaskDelayUntil(), have to look into it first
   for (;;)
   {
@@ -189,9 +192,6 @@ void LightsTaskcode(void *pvParameters)
 
       // select the correct mode
       select_mode();
-
-      // set the constraints, such as minimum BPM
-      set_constraint();
 
       // set dimmer value (should be between 0 and 1)
       LED.setDimmer((static_cast<float>(active_states[DIM]))/255);
@@ -238,6 +238,9 @@ void ControllerTaskcode(void *pvParameters)
 
   dmx_set_pin(dmx_num, tx_pin, rx_pin, rts_pin);
 
+  // send time 
+  int sendTime = 0;
+
   // loop and read for DMX packets
   for (;;)
   {
@@ -252,19 +255,20 @@ void ControllerTaskcode(void *pvParameters)
       {
         // dmx_read(dmx_num, data, packet.size);
         dmx_read_offset(dmx_num, dmx_start_addr, dmx_data, dmx_size);
+        //Serial.println("data received");
       }
       else
       {
-        // printf("An error occurred receiving DMX!");
+        // do something?
       }
     }
-
+    
     // sync DMX states to
     sync_states();
 
-    // send data to disco ball
-    esp_err_t result = esp_now_send(disco_address, (uint8_t *)discostates, disco_dmx_size * sizeof(uint8_t));
-
+    // set the constraints, such as minimum BPM
+    set_constraint();
+    
     // task delay for stability
     vTaskDelay(1);
   }

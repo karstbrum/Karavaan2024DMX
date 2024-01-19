@@ -68,8 +68,6 @@ void Pixels::strobo(uint8_t colorIndex, uint8_t numClusters_, uint8_t clusters_[
         dimValue = 0;
     }
 
-    printf("dim value: %.2f\n", dimValue);
-
     // set all strips to off before making pattern
     strip->setColorsAll(0, 0);
     
