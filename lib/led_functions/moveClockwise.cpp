@@ -72,7 +72,7 @@ void Pixels::moveClockwise(uint8_t colorIndex, uint8_t numClusters_, uint8_t clu
         pixelStart += pixelsPerCluster[k];
         pixelEnd = pixelStart + pixelsPerCluster[k] -1;
 
-        float dimValue = getDimValue(i);
+        float dimValue = getDimValue(k);
         if(currentCluster == k){
             strip->setRange(pixelStart, pixelEnd, colorIndex, dimValue);
         }
