@@ -10,6 +10,7 @@
 #include <ctime>
 #include <random>
 #include <algorithm>
+#include <unordered_map>
 
 // clusters turn on in a clockwise direction
 void Pixels::moveClockwise(uint8_t colorIndex, uint8_t numClusters_, uint8_t clusters_[], float fadetime) {
@@ -30,7 +31,7 @@ void Pixels::moveClockwise(uint8_t colorIndex, uint8_t numClusters_, uint8_t clu
         }
     }
 
-    pulseIndex += (Ts_ / 1000) * (BPM / 60) / freqdiv; // Ts*BPS (s^1 * s^-1)
+    pulseIndex += (Ts_ / 1000) * (BPM / 60);
 
 
     // set all strips to off before making pattern
@@ -47,9 +48,21 @@ void Pixels::moveClockwise(uint8_t colorIndex, uint8_t numClusters_, uint8_t clu
         currentCluster += 1;
     }
 
-    // fadetime 0  0.5 1
-    float getDimValue(uint8_t i) {
-        // functie hier
+    std::unordered_map<int, float> dimValueMap;
+
+    float getDimValue(int i) {
+        if (fadetime == 0) {
+            return 0;
+        }
+
+        if (dimValueMap.find(i) == dimValueMap.end()) {
+            dimValueMap[i] = 1.0;
+            return 1.0;
+        } else {
+            float newValue = dimValueMap[i] * fadetime;
+            dimValueMap[i] = newValue;
+            return newValue;
+        }
     }
 
     // turn on current cluster
@@ -59,10 +72,10 @@ void Pixels::moveClockwise(uint8_t colorIndex, uint8_t numClusters_, uint8_t clu
         pixelStart += pixelsPerCluster[k];
         pixelEnd = pixelStart + pixelsPerCluster[k] -1;
 
+        float dimValue = getDimValue(i);
         if(currentCluster == k){
-            strip->setRange(pixelStart, pixelEnd, colorIndex, 1);
+            strip->setRange(pixelStart, pixelEnd, colorIndex, dimValue);
         }
-
     }
 
 
