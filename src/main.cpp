@@ -9,10 +9,7 @@
 #include <esp_now.h>
 
 // Sampling time (Ts)
-#define Ts 33
-
-// send time interval
-#define Tsend 250
+#define Ts 500
 
 // max numbers for settings
 #define MAXCOLORS 10
@@ -33,8 +30,8 @@ const int rx_pin = 16;
 const int rts_pin = 21;
 
 // communication to discoball
-// address to send data to:
-uint8_t disco_address[] = {0x0C, 0xB8, 0x15, 0x85, 0xE4, 0xE4};
+// address to send data to: A8:42:E3:8D:B8:04 
+uint8_t disco_address[] = {0xA8, 0x42, 0xE3, 0x8D, 0xB8, 0x04};
 
 // led states (dmx)
 uint8_t LEDstates[dmx_size];
@@ -66,6 +63,7 @@ uint16_t LEDsPerSide[] = {18, 18, 18, 18, 18, 18, 18, 18, 18, 18,
 uint8_t numSides = sizeof(LEDsPerSide) / sizeof(uint16_t);
 uint8_t sidesPerPin[] = {10, 10, 9, 10};
 uint8_t LEDPins[] = {25, 26, 32, 33};
+//uint8_t LEDPins[] = {25};
 uint8_t numPins = sizeof(LEDPins);
 Pixels LED(numSides, LEDsPerSide, numPins, sidesPerPin, LEDPins, Ts);
 
@@ -79,7 +77,6 @@ void sync_states()
   // write DMX data to LED states
   for (int i = 0; i < dmx_size / 16; i++)
   {
-
     for (int j = 0; j < 8; j++)
     {
       // write first 8 states to LEDstates
@@ -101,14 +98,11 @@ void select_mode()
   // loop through sets of 8 and check for non zero entry
   for (int i = 0; i < led_dmx_size / 8; i++)
   {
-
     // loop through state of the mode
     for (int j = 0; j < 8; j++)
     {
-
       if (LEDstates[i * 8 + j] > 0)
       {
-
         // mode found at nonzero state
         state_found = true;
 
@@ -116,11 +110,9 @@ void select_mode()
         break;
       }
     }
-
     // break loop if state is found, needed for later
     if (state_found)
     {
-
       // set the mode
       active_states[MODE] = i;
 
@@ -131,20 +123,16 @@ void select_mode()
   // if state found set all states
   if (state_found)
   {
-
     for (int j = 0; j < 8; j++)
     {
-
       // set the values
       active_states[j] = LEDstates[active_states[MODE] * 8 + j];
     }
   }
   else
   {
-
     for (int j = 0; j < 8; j++)
     {
-
       // set the values
       active_states[j] = 0;
     }
@@ -165,8 +153,8 @@ void setmode(){
       uint8_t clusters[] = {2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 4, 5, 4, 6};
       uint8_t num_clusters = sizeof(clusters)/sizeof(uint8_t);
       float fade_time = 0.05;
-      float on_time = 1 - static_cast<float>(active_states[EXTRA1])/255;
-      float on_chance = 1 - static_cast<float>(active_states[EXTRA2])/255;
+      float on_time = 1-static_cast<float>(active_states[EXTRA1])/255;
+      float on_chance = 1-static_cast<float>(active_states[EXTRA2])/255;
       LED.strobo(0, num_clusters, clusters, fade_time, on_time, on_chance);
       break;
     }
@@ -186,6 +174,9 @@ void LightsTaskcode(void *pvParameters)
 
     if (millis() - loopTime >= Ts)
     {
+
+      //printf("Mode: %i, Dim: %i, Red: %i\n", active_states[MODE], active_states[DIM], active_states[RED]);
+      //printf("BPM: %i, Dim: %i, Red: %i\n", discostates[BPM], discostates[DIM], discostates[RED]);
 
       // reset loop time
       loopTime = millis();
@@ -208,6 +199,8 @@ void LightsTaskcode(void *pvParameters)
       // set the LED 
       LED.activateColor();
 
+      //printf("%i\n", millis() - loopTime);
+
     }
   }
 }
@@ -219,14 +212,27 @@ void ControllerTaskcode(void *pvParameters)
   // Set device as a Wi-Fi Station
   WiFi.mode(WIFI_STA);
   WiFi.disconnect();
-  esp_now_init();
+
+  // init esp_now
+  if (esp_now_init() != ESP_OK) {
+    Serial.println("Error initializing ESP-NOW");
+    //return;
+  }
 
   // setup receiver info to channel 0
-  esp_now_peer_info_t peerInfo;
+  esp_now_peer_info_t peerInfo = {};
   memcpy(peerInfo.peer_addr, disco_address, 6);
   peerInfo.channel = 0;
   peerInfo.encrypt = false;
-  esp_now_add_peer(&peerInfo);
+
+  // add receiver
+  if (esp_now_add_peer(&peerInfo) == ESP_OK) {
+    Serial.println("Pair success");
+  }
+  else
+  {
+    Serial.println("Pair failed");
+  }
 
   // First, use the default DMX configuration...
   dmx_config_t config = DMX_CONFIG_DEFAULT;
@@ -249,13 +255,26 @@ void ControllerTaskcode(void *pvParameters)
 
     if (dmx_receive(dmx_num, &packet, DMX_TIMEOUT_TICK))
     {
-
+      //printf("received");
       // Check that no errors occurred.
       if (packet.err == DMX_OK)
       {
+
         // dmx_read(dmx_num, data, packet.size);
-        dmx_read_offset(dmx_num, dmx_start_addr, dmx_data, dmx_size);
+        // add 1 to dmx size since first byte = NULL
+        dmx_read_offset(dmx_num, dmx_start_addr, dmx_data, dmx_size+1);
         //Serial.println("data received");
+
+        // send data to discoball (use pointer to discostates array and define length of array)
+        esp_err_t send_status = esp_now_send(0, (uint8_t *) &discostates, disco_dmx_size);
+        
+        if (send_status == ESP_ERR_ESPNOW_NOT_FOUND){
+          printf("Peer not found\n");
+        } 
+        // else {
+        //   printf("Error code: %i\n", send_status);
+        // }
+        
       }
       else
       {

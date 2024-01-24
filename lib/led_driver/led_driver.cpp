@@ -71,8 +71,6 @@ void RGBW::changeAddedColor(uint8_t W, uint8_t R, uint8_t G, uint8_t B, uint8_t 
 
 void RGBW::setColorsAll(uint8_t color, float extraDim) {
 
-    //Serial.printf("W: %.0f, R: %.0f, G: %.0f, B: %.0f\n", colors[color][0], colors[color][1], colors[color][2], colors[color][3]);
-
     for (uint16_t k = 0; k < numLEDs; k++) {
 
         RGBW::setColorsIndividual(k, colors[color][0], colors[color][1], colors[color][2], colors[color][3], extraDim);
@@ -156,7 +154,8 @@ void RGBW::setStrip() {
         };
         
     };
-
+    
+    // try to run this loop in parallel to make the code faster
     for (uint8_t k = 0; k < numPins; k++) {           // for each strip 
         strip[k].show();      //  Set strip
     };

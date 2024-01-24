@@ -20,6 +20,10 @@ void Pixels::strobo(uint8_t colorIndex, uint8_t numClusters_, uint8_t clusters_[
     // set sample time
     float Ts_ = Ts;
 
+    // set limits on on_time and on_chance
+    on_time = on_time < 0.05 ? on_time : 0.05;
+    on_chance = on_chance < 0.05 ? on_chance : 0.05;
+
     // define clusters
     // numClusters_ defines the number of clusters defined in clusters_
     // clusters_ contains the number of consecuteve sides for the cluster
@@ -37,7 +41,7 @@ void Pixels::strobo(uint8_t colorIndex, uint8_t numClusters_, uint8_t clusters_[
     pulseIndex += (Ts_ / 1000) * (BPM / 60) / freqdiv; // Ts*BPS (s^1 * s^-1)
 
     // if pulseindex exceeds 1, select the cluster to light up
-    if (pulseIndex > 1) {
+    if (pulseIndex >= 1) {
 
         pulseIndex -= 1;
         // determine number of clusters to be used
@@ -52,6 +56,7 @@ void Pixels::strobo(uint8_t colorIndex, uint8_t numClusters_, uint8_t clusters_[
 
     // adjustable function for dimvalue
     float dimValue;
+
     // define when on
     // fully on in ontime section, fade in small section, otherwise off
       // on
