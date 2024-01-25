@@ -9,7 +9,7 @@
 #include <esp_now.h>
 
 // Sampling time (Ts)
-#define Ts 500
+#define Ts 33
 
 // max numbers for settings
 #define MAXCOLORS 10

@@ -21,8 +21,8 @@ void Pixels::strobo(uint8_t colorIndex, uint8_t numClusters_, uint8_t clusters_[
     float Ts_ = Ts;
 
     // set limits on on_time and on_chance
-    on_time = on_time < 0.05 ? on_time : 0.05;
-    on_chance = on_chance < 0.05 ? on_chance : 0.05;
+    on_time = on_time < 0.05 ? 0.05 : on_time;
+    on_chance = on_chance < 0.05 ? 0.05 : on_chance;
 
     // define clusters
     // numClusters_ defines the number of clusters defined in clusters_

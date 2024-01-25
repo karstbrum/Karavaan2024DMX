@@ -127,7 +127,7 @@ void setmode(){
       uint8_t clusters[] = {1, 1, 1, 1, 1, 1, 1, 1};
       uint8_t num_clusters = sizeof(clusters)/sizeof(uint8_t);
       float fade_time = 0.05;
-      float on_time = 0; // 0 is always on
+      float on_time = 1; 
       float on_chance = 1-static_cast<float>(active_states[EXTRA])/255;
       LED.strobo(0, num_clusters, clusters, fade_time, on_time, on_chance);
       break;
@@ -165,7 +165,7 @@ void LightsTaskcode( void * pvParameters ){
       LED.setDimmer((static_cast<float>(active_states[DIM]))/255);
 
       // set color
-      // LED.changeColor(active_states[WHITE], active_states[RED], active_states[GREEN], active_states[BLUE]);
+      LED.changeColor(active_states[WHITE], active_states[RED], active_states[GREEN], active_states[BLUE]);
 
       // set BPM
       LED.setBPM(active_states[BPM]);
