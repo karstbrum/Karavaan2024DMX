@@ -36,7 +36,7 @@ class Pixels {
         void setBPM(float BPM_);
 
         // dimmer system
-        float dimSystem(uint16_t index_start, uint16_t index_end, float alpha = 0,  float input = 0);
+        void setDimmedRange(uint16_t index_start, uint16_t index_end, float alpha = 0,  float input = 0, uint8_t color_index = 0);
 
         // light functions
         // set fixed color
@@ -47,7 +47,7 @@ class Pixels {
         void moveClockwise(uint8_t colorIndex, uint8_t numClusters_ = 0, uint8_t clusters_[MAXSIDES_L] = {}, float fadetime = 0.1);
         
         // variables
-        int sideIndex = 0;
+        int clusterIndex = 0;
         // variables for pulse and updown
         float pulseIndex = 0;
 
@@ -68,8 +68,8 @@ class Pixels {
         float BPM = 100;
         float Ts;
 
-        float current_dimstate[MAXNUMPIXELS];
-        float previous_dimstate[MAXNUMPIXELS];
+        // dimstates for slow fading
+        float dimstate[MAXNUMPIXELS];
 
         // used for selection random clusters
         bool boolvector[MAXSIDES_L];

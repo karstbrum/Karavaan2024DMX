@@ -36,32 +36,11 @@ void Pixels::moveClockwise(uint8_t colorIndex, uint8_t numClusters_, uint8_t clu
     // set all strips to off before making pattern
     strip->setColorsAll(0, 0);
 
-    uint8_t currentCluster = 0;
     // if pulseindex exceeds 1, move one cluster up
     if (pulseIndex > 1) {
         pulseIndex -= 1;
-        // determine number of clusters to be used
-        // reset seed
-        srand(time(0));
         // select random numbers
-        currentCluster += 1;
-    }
-
-    std::unordered_map<int, float> dimValueMap;
-    // determine the amount dim value based on a previous value and the fadetime
-    float getDimValue(int i) {
-        if (fadetime == 0) {
-            return 0;
-        }
-
-        if (dimValueMap.find(i) == dimValueMap.end()) {
-            dimValueMap[i] = 1.0;
-            return 1.0;
-        } else {
-            float newValue = dimValueMap[i] * fadetime;
-            dimValueMap[i] = newValue;
-            return newValue;
-        }
+        clusterIndex += 1;
     }
 
     // turn on lights per cluster
@@ -71,11 +50,16 @@ void Pixels::moveClockwise(uint8_t colorIndex, uint8_t numClusters_, uint8_t clu
         pixelStart += pixelsPerCluster[k];
         pixelEnd = pixelStart + pixelsPerCluster[k] -1;
 
-        float dimValue = getDimValue(k);
-        if(currentCluster == k){
-            strip->setRange(pixelStart, pixelEnd, colorIndex, dimValue);
+        if(clusterIndex == k){
+            // set input of 1 to the dim states (x[k] = x[k-1] + 1)
+            // color index 0
+            setDimmedRange(pixelStart, pixelEnd, fadetime,  1, 0);
+        } else {
+            // set input of 0 to the dim states (x[k] = x[k-1] + 0)
+            // color index 0
+            setDimmedRange(pixelStart, pixelEnd, fadetime,  0, 0);
         }
+
     }
-    // reset the values in dimValueMap to start over
-    dimValueMap.clear();
+
 }

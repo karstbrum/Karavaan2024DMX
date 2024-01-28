@@ -85,16 +85,18 @@ float Pixels::randomFloat() {
     return 0.1 + static_cast<float>(randnum) / 125;
 }
 
-float Pixels::dimSystem(uint16_t index_start, uint16_t index_end, float alpha,  float input){
-
+void Pixels::setDimmedRange(uint16_t index_start, uint16_t index_end, float alpha,  float input, uint8_t color_index){
 
     for(uint16_t i_led = index_start; i_led<index_end; i_led++){
         // this approach will add the input to the brightness, so if input is e.g. 0.5
         // you get a funky effect
         // x[k] = a*x[k-1] + u
-        current_dimstate[i_led] = alpha*previous_dimstate[i_led] + input;
+        // dimstate has the value of previous iteration, set to new iteration
+        dimstate[i_led] = alpha*dimstate[i_led] + input;
         // limit the dimstate to a max of 1
-        current_dimstate[i_led] = current_dimstate[i_led] > 1 ? 1 : current_dimstate[i_led];
+        dimstate[i_led] = dimstate[i_led] > 1 ? 1 : dimstate[i_led];
+        // set color and correct dimvalue to the LED
+        strip->setColorsIndividualFixed(i_led, color_index, dimstate[i_led]);
     }
 
 }
