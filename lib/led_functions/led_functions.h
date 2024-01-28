@@ -35,6 +35,8 @@ class Pixels {
         // beats per minute
         void setBPM(float BPM_);
 
+        // dimmer system
+        float dimSystem(uint16_t index_start, uint16_t index_end, float alpha = 0,  float input = 0);
 
         // light functions
         // set fixed color
@@ -64,6 +66,9 @@ class Pixels {
         uint16_t totalPixels;
         float BPM = 100;
         float Ts;
+
+        float current_dimstate[MAXNUMPIXELS];
+        float previous_dimstate[MAXNUMPIXELS];
 
         // used for selection random clusters
         bool boolvector[MAXSIDES_L];

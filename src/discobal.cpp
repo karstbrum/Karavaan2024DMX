@@ -21,8 +21,8 @@ const uint8_t RED = 2;
 const uint8_t GREEN = 3;
 const uint8_t BLUE = 4;
 const uint8_t WHITE = 5;
-const uint8_t MOTOR = 6;
-const uint8_t EXTRA = 7;
+const uint8_t EXTRA1 = 6;
+const uint8_t EXTRA2 = 7;
 const uint8_t MODE = 8;
 uint8_t active_states[9];
 
@@ -34,7 +34,7 @@ TaskHandle_t ControllerTask;
 uint16_t LEDsPerSide[] = {36, 36, 36, 36, 36, 36, 36, 36}; 
 uint8_t numSides = sizeof(LEDsPerSide)/sizeof(uint16_t);
 uint8_t sidesPerPin[] = {8};
-uint8_t LEDPins[] = {25};
+uint8_t LEDPins[] = {33};
 uint8_t numPins = sizeof(LEDPins);
 Pixels LED(numSides, LEDsPerSide, numPins, sidesPerPin, LEDPins, Ts);
 
@@ -42,7 +42,7 @@ Pixels LED(numSides, LEDsPerSide, numPins, sidesPerPin, LEDPins, Ts);
 uint8_t motor_pin = 32;
 
 // level to turn motor on
-uint8_t motor_on_level = 250;
+uint8_t motor_on_level = 140;
 
 // pointers to objects
 Pixels* LED_pointer = &LED;
@@ -127,8 +127,8 @@ void setmode(){
       uint8_t clusters[] = {1, 1, 1, 1, 1, 1, 1, 1};
       uint8_t num_clusters = sizeof(clusters)/sizeof(uint8_t);
       float fade_time = 0.05;
-      float on_time = 1; 
-      float on_chance = 1-static_cast<float>(active_states[EXTRA])/255;
+      float on_time = 1-static_cast<float>(active_states[EXTRA1])/255; 
+      float on_chance = 1-static_cast<float>(active_states[EXTRA2])/255;
       LED.strobo(0, num_clusters, clusters, fade_time, on_time, on_chance);
       break;
     }
@@ -136,7 +136,7 @@ void setmode(){
 
 void setmotor(){
 // if motor level is equal or greater than motor_on_level, turn motor on
-  if(active_states[MOTOR] >= motor_on_level){
+  if(active_states[DIM] >= motor_on_level){
     digitalWrite(motor_pin, HIGH);
   } else {
     digitalWrite(motor_pin, LOW);

@@ -7,13 +7,14 @@
 uint16_t LEDsPerSide[] = {300}; 
 uint8_t numSides = sizeof(LEDsPerSide)/sizeof(uint16_t);
 uint8_t sidesPerPin[] = {1};
-uint8_t LEDPins[] = {25};
+uint8_t LEDPins[] = {33};
 uint8_t numPins = sizeof(LEDPins);
 Pixels LED(numSides, LEDsPerSide, numPins, sidesPerPin, LEDPins, 1);
 
 void setup() {
 
   Serial.begin(115200);
+  LED.setDimmer(1);
 
 }
 

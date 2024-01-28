@@ -80,3 +80,17 @@ float Pixels::randomFloat() {
     uint8_t randnum = rand() % 100;
     return 0.1 + static_cast<float>(randnum) / 125;
 }
+
+float Pixels::dimSystem(uint16_t index_start, uint16_t index_end, float alpha,  float input){
+
+
+    for(uint16_t i_led = index_start; i_led<index_end; i_led++){
+        // this approach will add the input to the brightness, so if input is e.g. 0.5
+        // you get a funky effect
+        // x[k] = a*x[k-1] + u
+        current_dimstate[i_led] = alpha*previous_dimstate[i_led] + input;
+        // limit the dimstate to a max of 1
+        current_dimstate[i_led] = current_dimstate[i_led] > 1 ? 1 : current_dimstate[i_led];
+    }
+
+}
