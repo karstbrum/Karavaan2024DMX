@@ -71,11 +71,9 @@ class Pixels {
         // dimstates for slow fading
         float dimstate[MAXNUMPIXELS];
 
-        // used for selection random clusters
-        bool boolvector[MAXSIDES_L];
-
-        //
-        uint8_t pulseColorIndex = 0;
+        // number of clusters to turn on - used for strobo.cpp
+        uint8_t number_on = 0;
+        uint8_t clusterindices[MAXSIDES_L] = {};
 
         // RGBW class (self made)
         RGBW* strip;

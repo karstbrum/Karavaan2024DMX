@@ -45,13 +45,21 @@ void Pixels::strobo(uint8_t colorIndex, uint8_t numClusters_, uint8_t clusters_[
 
         pulseIndex -= 1;
         // determine number of clusters to be used
-        // reset seed
-        srand(time(0));
-        // select random numbers
-        for (int i = 0; i < numClusters; i++){
-            boolvector[i] = rand() % 100 < static_cast<uint8_t>(on_chance*100) ? true : false;
+        // reset seed every 1 ms
+        srand(millis());
+
+        // fill index vector for all clusters
+        for (uint8_t i_cluster = 0; i_cluster < numClusters; i_cluster++){
+            clusterindices[i_cluster] = i_cluster;
         }
-        
+        // shuffle array 
+        std::random_shuffle(&clusterindices[0], &clusterindices[numClusters]);
+
+        // define number of clusters that should turn on, round to upper
+    	number_on = ceil(on_chance*numClusters);
+        // number of cluster turning on should be at least 1
+        number_on = number_on > 1 ? number_on : 1;
+
     }
 
     // adjustable function for dimvalue
@@ -79,10 +87,20 @@ void Pixels::strobo(uint8_t colorIndex, uint8_t numClusters_, uint8_t clusters_[
     uint16_t pixelStart = 0;
     uint16_t pixelEnd = 0;
     for (uint8_t k = 0; k < numClusters; k++) {
+        // define start and end pixel of the cluster
         pixelStart += pixelsPerCluster[k];
         pixelEnd = pixelStart + pixelsPerCluster[k] -1;
 
-        if(boolvector[k]){
+        // check if cluster should turn on
+        bool cluster_on = false;
+        for (uint8_t i_rand = 0; i_rand < number_on; i_rand++){
+            if (k == clusterindices[i_rand]){
+                cluster_on = true;
+            }
+        }
+
+        if(cluster_on){
+            // TODO: us setDimmedRange here instead, test first with this
             strip->setRange(pixelStart, pixelEnd, colorIndex, dimValue);
         }
 
