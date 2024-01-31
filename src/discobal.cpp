@@ -8,7 +8,7 @@
 #include<esp_now.h>
 
 // Sampling time (Ts)
-#define Ts 33
+#define Ts 100
 
 // discoball states 
 const uint8_t disco_dmx_size = 32;

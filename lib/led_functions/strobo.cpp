@@ -22,7 +22,6 @@ void Pixels::strobo(uint8_t colorIndex, uint8_t numClusters_, uint8_t clusters_[
 
     // set limits on on_time and on_chance
     on_time = on_time < 0.05 ? 0.05 : on_time;
-    on_chance = on_chance < 0.05 ? 0.05 : on_chance;
 
     // define clusters
     // numClusters_ defines the number of clusters defined in clusters_
@@ -38,6 +37,13 @@ void Pixels::strobo(uint8_t colorIndex, uint8_t numClusters_, uint8_t clusters_[
         }
     }
 
+    // define number of clusters that should turn on, round to upper
+    number_on = ceil(on_chance*numClusters);
+    // number of cluster turning on should be at least 1 and max numClusters
+    number_on = number_on > 1 ? number_on : 1;
+    number_on = number_on < numClusters ? number_on : numClusters;
+
+    // count to 1 every BPM / freqdiv
     pulseIndex += (Ts_ / 1000) * (BPM / 60) / freqdiv; // Ts*BPS (s^1 * s^-1)
 
     // if pulseindex exceeds 1, select the cluster to light up
@@ -45,20 +51,13 @@ void Pixels::strobo(uint8_t colorIndex, uint8_t numClusters_, uint8_t clusters_[
 
         pulseIndex -= 1;
         // determine number of clusters to be used
-        // reset seed every 1 ms
-        srand(millis());
-
+        
         // fill index vector for all clusters
         for (uint8_t i_cluster = 0; i_cluster < numClusters; i_cluster++){
             clusterindices[i_cluster] = i_cluster;
         }
         // shuffle array 
         std::random_shuffle(&clusterindices[0], &clusterindices[numClusters]);
-
-        // define number of clusters that should turn on, round to upper
-    	number_on = ceil(on_chance*numClusters);
-        // number of cluster turning on should be at least 1
-        number_on = number_on > 1 ? number_on : 1;
 
     }
 
@@ -84,13 +83,12 @@ void Pixels::strobo(uint8_t colorIndex, uint8_t numClusters_, uint8_t clusters_[
     // set all strips to off before making pattern
     strip->setColorsAll(0, 0);
     
+    // define first start and end pixels
     uint16_t pixelStart = 0;
-    uint16_t pixelEnd = 0;
-    for (uint8_t k = 0; k < numClusters; k++) {
-        // define start and end pixel of the cluster
-        pixelStart += pixelsPerCluster[k];
-        pixelEnd = pixelStart + pixelsPerCluster[k] -1;
+    uint16_t pixelEnd = pixelsPerCluster[0] - 1;
 
+    for (uint8_t k = 0; k < numClusters; k++) {
+        
         // check if cluster should turn on
         bool cluster_on = false;
         for (uint8_t i_rand = 0; i_rand < number_on; i_rand++){
@@ -104,6 +102,12 @@ void Pixels::strobo(uint8_t colorIndex, uint8_t numClusters_, uint8_t clusters_[
             strip->setRange(pixelStart, pixelEnd, colorIndex, dimValue);
         }
 
+        // define start and end pixel of the cluster
+        pixelStart += pixelsPerCluster[k];
+        pixelEnd = pixelStart + pixelsPerCluster[k] -1;
+
     }
+
+    printf("\n");
     
 }
