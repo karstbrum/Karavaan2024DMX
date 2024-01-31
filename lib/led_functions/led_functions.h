@@ -36,7 +36,7 @@ class Pixels {
         void setBPM(float BPM_);
 
         // dimmer system
-        void setDimmedRange(uint16_t index_start, uint16_t index_end, float alpha = 0,  float input = 0, uint8_t color_index = 0);
+        void setDimmedRange(uint16_t index_start, uint16_t index_end, float alpha = 0, uint8_t color_index = 0,  float input = 0);
 
         // light functions
         // set fixed color
@@ -45,6 +45,7 @@ class Pixels {
         // select sideson (relative) sides to turn on, with a relative ammount of face
         void strobo(uint8_t colorIndex, uint8_t numClusters_ = 0, uint8_t clusters_[MAXSIDES_L] = {}, float fadetime = 0.1, float on_time = 1, float on_chance = 1);
         void moveClockwise(uint8_t colorIndex, uint8_t numClusters_ = 0, uint8_t clusters_[MAXSIDES_L] = {}, float fadetime = 0.1);
+        void movingPixel(uint8_t colorIndex, uint8_t numClusters_, uint8_t clusters_[], uint8_t direction = 1, float fadetime = 0, uint8_t num_pixels = 1);
         
         // variables
         int clusterIndex = 0;

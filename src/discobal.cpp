@@ -8,7 +8,7 @@
 #include<esp_now.h>
 
 // Sampling time (Ts)
-#define Ts 100
+#define Ts 20
 
 // discoball states 
 const uint8_t disco_dmx_size = 32;
@@ -122,7 +122,7 @@ void set_constraint()
 void setmode(){
   switch (active_states[MODE])
     {
-    case 0: // 
+    case 0: {// 
       // use clusters of a pole of a full letter
       uint8_t clusters[] = {1, 1, 1, 1, 1, 1, 1, 1};
       uint8_t num_clusters = sizeof(clusters)/sizeof(uint8_t);
@@ -130,7 +130,20 @@ void setmode(){
       float on_time = 1-static_cast<float>(active_states[EXTRA1])/255; 
       float on_chance = 1-static_cast<float>(active_states[EXTRA2])/255;
       LED.strobo(0, num_clusters, clusters, fade_time, on_time, on_chance);
-      break;
+      break; }
+
+    case 1: {// 
+      // use clusters of a pole of a full letter
+      uint8_t clusters[] = {8};
+      uint8_t num_clusters = sizeof(clusters)/sizeof(uint8_t);
+      int direction = 1;
+      // between 0 and 0.9
+      float fadetime = static_cast<float>(active_states[EXTRA1])/285;
+      // between 1 and 4
+      uint8_t num_pixels = 1 + static_cast<uint8_t>(floor(static_cast<float>(active_states[EXTRA2])/64));
+      LED.movingPixel(0, num_clusters, clusters, direction, fadetime, num_pixels);
+      break; }
+
     }
 }
 

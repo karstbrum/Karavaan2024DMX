@@ -85,9 +85,9 @@ float Pixels::randomFloat() {
     return 0.1 + static_cast<float>(randnum) / 125;
 }
 
-void Pixels::setDimmedRange(uint16_t index_start, uint16_t index_end, float alpha,  float input, uint8_t color_index){
+void Pixels::setDimmedRange(uint16_t index_start, uint16_t index_end, float alpha, uint8_t color_index,  float input){
 
-    for(uint16_t i_led = index_start; i_led<index_end; i_led++){
+    for(uint16_t i_led = index_start; i_led<=index_end; i_led++){
         // this approach will add the input to the brightness, so if input is e.g. 0.5
         // you get a funky effect
         // x[k] = a*x[k-1] + u

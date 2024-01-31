@@ -107,7 +107,5 @@ void Pixels::strobo(uint8_t colorIndex, uint8_t numClusters_, uint8_t clusters_[
         pixelEnd = pixelStart + pixelsPerCluster[k] -1;
 
     }
-
-    printf("\n");
     
 }
