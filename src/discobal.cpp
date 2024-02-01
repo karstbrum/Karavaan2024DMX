@@ -144,6 +144,14 @@ void setmode(){
       LED.movingPixel(0, num_clusters, clusters, direction, fadetime, num_pixels, true);
       break; }
 
+    case 2: {// 
+      // between 0 and 0.9
+      float fadetime = static_cast<float>(active_states[EXTRA1])/285;
+      // flash chance between 1 and 86
+      uint8_t flash_chance = floor(active_states[EXTRA2]/3);
+      LED.flashingPixels(0, flash_chance, fadetime);
+      break; }
+
     }
 }
 
