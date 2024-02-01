@@ -45,12 +45,16 @@ class Pixels {
         // select sideson (relative) sides to turn on, with a relative ammount of face
         void strobo(uint8_t colorIndex, uint8_t numClusters_ = 0, uint8_t clusters_[MAXSIDES_L] = {}, float fadetime = 0.1, float on_time = 1, float on_chance = 1);
         void moveClockwise(uint8_t colorIndex, uint8_t numClusters_ = 0, uint8_t clusters_[MAXSIDES_L] = {}, float fadetime = 0.1);
-        void movingPixel(uint8_t colorIndex, uint8_t numClusters_, uint8_t clusters_[], uint8_t direction = 1, float fadetime = 0, uint8_t num_pixels = 1);
+        void movingPixel(uint8_t colorIndex, uint8_t numClusters_, uint8_t clusters_[], uint8_t direction = 1, float fadetime = 0, uint8_t num_pixels = 1, bool is_disco = false);
         
-        // variables
+        // variables for counting up clusters
         int clusterIndex = 0;
+
         // variables for pulse and updown
         float pulseIndex = 0;
+        float prev_pulseIndex = 0;
+        float extra_pulseIndex = 0;
+        bool normal_pulseIndex = true;
 
         // frequency divider
         float freqdiv = 1;

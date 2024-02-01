@@ -141,7 +141,7 @@ void setmode(){
       float fadetime = static_cast<float>(active_states[EXTRA1])/285;
       // between 1 and 4
       uint8_t num_pixels = 1 + static_cast<uint8_t>(floor(static_cast<float>(active_states[EXTRA2])/64));
-      LED.movingPixel(0, num_clusters, clusters, direction, fadetime, num_pixels);
+      LED.movingPixel(0, num_clusters, clusters, direction, fadetime, num_pixels, true);
       break; }
 
     }

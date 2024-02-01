@@ -12,7 +12,7 @@
 #include <algorithm>
 
 // One of more traveling LEDs/pixels over the whole range, or per cluster
-void Pixels::movingPixel(uint8_t colorIndex, uint8_t numClusters_, uint8_t clusters_[], uint8_t direction, float fadetime, uint8_t num_pixels) {
+void Pixels::movingPixel(uint8_t colorIndex, uint8_t numClusters_, uint8_t clusters_[], uint8_t direction, float fadetime, uint8_t num_pixels, bool is_disco) {
 
     // direction: clockwise of anti clockwise (1 or -1)
     // fadetime: can be any positive number which determines the time the LEDs dim to 5% of the original value
@@ -36,7 +36,40 @@ void Pixels::movingPixel(uint8_t colorIndex, uint8_t numClusters_, uint8_t clust
     }
 
     // count to 1 or down to zero per beat, depending on direction
-    pulseIndex +=  static_cast<float>(direction) * (Ts_ / 1000) * (BPM / 60) / freqdiv; // Ts*BPS (s^1 * s^-1)
+    if (is_disco){
+        
+        // if 0.5 or 1 is reached, count to 0.1 before continuing, for filling the gap
+        // the normal_pulseIndex bool will be set to false, can only continue in normal mode when this bool is changed to true
+        if ((prev_pulseIndex-0.5) * (pulseIndex-0.5) < 0 || (prev_pulseIndex-1) * (pulseIndex-1) < 0 || pulseIndex == 0.5 || pulseIndex == 1) {
+            
+            // disable the normal pulseIndex and start counting the extra pulseIndex
+            normal_pulseIndex = false;
+            extra_pulseIndex +=  static_cast<float>(direction) * (Ts_ / 1000) * (BPM / 60) / freqdiv; // Ts*BPS (s^1 * s^-1)
+
+            // if extra pulseIndex is counted to 0.1 (20 cm gap vs 100cm strip), reset en continue normal
+            // the nomrmal_pulseIndex bool is set back to true, so normal count will continue
+            if (extra_pulseIndex >= 0.1) {
+                normal_pulseIndex = true;
+                extra_pulseIndex = 0;
+            }
+
+        } 
+        
+        // always count if normal pulseIndex is true
+        if (normal_pulseIndex) {
+            // have to keep track of the previous and current pulseIndex
+            prev_pulseIndex = pulseIndex;
+            // count the pulseindex normally
+            pulseIndex +=  static_cast<float>(direction) * (Ts_ / 1000) * (BPM / 60) / freqdiv; // Ts*BPS (s^1 * s^-1)
+        }
+
+    } else {
+        // count the pulseindex normally
+        pulseIndex +=  static_cast<float>(direction) * (Ts_ / 1000) * (BPM / 60) / freqdiv; // Ts*BPS (s^1 * s^-1)
+        // set other values to safe
+        normal_pulseIndex = true;
+        extra_pulseIndex = 0;
+    }
 
     // if pulseindex exceeds 1, select the cluster to light up
     if (pulseIndex > 1 || pulseIndex < 0) {
@@ -89,15 +122,10 @@ void Pixels::movingPixel(uint8_t colorIndex, uint8_t numClusters_, uint8_t clust
                 // check if the LED is is in the (-2, +2) range of a led that should be on
                 // if the led is in the range, find the correctvalue
                 if (norm_pos >= (pos_array[i_pixel] - norm_dist) && norm_pos <= (pos_array[i_pixel] + norm_dist)){
-                    
-                    // normalized position (between 0 and 1) of the led in the sine
-                    // float sin_pos = (norm_pos - (pos_array[i_pixel] - norm_dist)) / (norm_dist * 2);
 
-                    // // use sine to calculate the dimmer value of the LED
-                    // dimvalue = sin(sin_pos*PI);
-
-                    // just make it 1, since too many LEDs
-                    dimvalue = 1;
+                    // just make it 1 for continuity 
+                    // only set new dimvalue when normal pulseIndex continues
+                    dimvalue = normal_pulseIndex ? 1 : 0;
 
                 }
 
