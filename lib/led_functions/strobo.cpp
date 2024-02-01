@@ -87,12 +87,12 @@ void Pixels::strobo(uint8_t colorIndex, uint8_t numClusters_, uint8_t clusters_[
     uint16_t pixelStart = 0;
     uint16_t pixelEnd = pixelsPerCluster[0] - 1;
 
-    for (uint8_t k = 0; k < numClusters; k++) {
+    for (uint8_t i_cluster = 0; i_cluster < numClusters; i_cluster++) {
         
         // check if cluster should turn on
         bool cluster_on = false;
         for (uint8_t i_rand = 0; i_rand < number_on; i_rand++){
-            if (k == clusterindices[i_rand]){
+            if (i_cluster == clusterindices[i_rand]){
                 cluster_on = true;
             }
         }
@@ -103,8 +103,10 @@ void Pixels::strobo(uint8_t colorIndex, uint8_t numClusters_, uint8_t clusters_[
         }
 
         // define start and end pixel of the cluster
-        pixelStart += pixelsPerCluster[k];
-        pixelEnd = pixelStart + pixelsPerCluster[k] -1;
+        if (i_cluster < numClusters-1){
+            pixelStart += pixelsPerCluster[i_cluster];
+            pixelEnd = pixelStart + pixelsPerCluster[i_cluster+1] -1;
+        }
 
     }
     

@@ -13,19 +13,20 @@
 #include <unordered_map>
 
 // clusters turn on in a clockwise direction
-void Pixels::moveClockwise(uint8_t colorIndex, uint8_t numClusters_, uint8_t clusters_[], float fadetime) {
+void Pixels::moveClockwise(uint8_t colorIndex, uint8_t numClusters, uint8_t clusters[], uint8_t cluster_order[], int direction, float fadetime) {
     // set sample time
     float Ts_ = Ts;
+
+    // direction determines they way direction of clusters
 
     // define clusters
     // numClusters_ defines the number of clusters defi ned in clusters_
     // clusters_ contains the number of consecuteve sides for the cluster
-    uint8_t numClusters = numClusters_;
     uint8_t pixelsPerCluster[MAXSIDES_L];
     uint8_t sideIndex = 0;
     for (uint8_t k = 0; k < numClusters; k++) {
         pixelsPerCluster[k] = 0;
-        for (uint8_t l = 0; l < clusters_[k]; l++) {
+        for (uint8_t l = 0; l < clusters[k]; l++) {
             pixelsPerCluster[k] += pixelsPerSide[sideIndex];
             sideIndex += 1;
         }
@@ -40,24 +41,30 @@ void Pixels::moveClockwise(uint8_t colorIndex, uint8_t numClusters_, uint8_t clu
     if (pulseIndex > 1) {
         pulseIndex -= 1;
         // select random numbers
-        clusterIndex += 1;
+        clusterIndex += direction;
     }
 
     // turn on lights per cluster
+    // define the first cluster
     uint16_t pixelStart = 0;
-    uint16_t pixelEnd = 0;
-    for (uint8_t k = 0; k < numClusters; k++) {
-        pixelStart += pixelsPerCluster[k];
-        pixelEnd = pixelStart + pixelsPerCluster[k] -1;
+    uint16_t pixelEnd = pixelsPerCluster[0] -1;
 
-        if(clusterIndex == k){
+    for (uint8_t i_cluster = 0; i_cluster < numClusters; i_cluster++) {
+
+        if(clusterIndex == cluster_order[i_cluster]){
             // set input of 1 to the dim states (x[k] = x[k-1] + 1)
             // color index 0
-            setDimmedRange(pixelStart, pixelEnd, fadetime,  1, 0);
+            setDimmedRange(pixelStart, pixelEnd, fadetime,  0, 1);
         } else {
             // set input of 0 to the dim states (x[k] = x[k-1] + 0)
             // color index 0
             setDimmedRange(pixelStart, pixelEnd, fadetime,  0, 0);
+        }
+
+        // count to next number of pixels
+        if (i_cluster < numClusters-1){
+            pixelStart += pixelsPerCluster[i_cluster];
+            pixelEnd = pixelStart + pixelsPerCluster[i_cluster+1] -1;
         }
 
     }

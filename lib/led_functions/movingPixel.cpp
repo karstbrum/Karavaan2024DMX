@@ -138,8 +138,10 @@ void Pixels::movingPixel(uint8_t colorIndex, uint8_t numClusters_, uint8_t clust
         }
 
         // define start and end pixel of the cluster
-        pixelStart += pixelsPerCluster[i_cluster];
-        pixelEnd = pixelStart + pixelsPerCluster[i_cluster] -1;
+        if (i_cluster < numClusters-1){
+            pixelStart += pixelsPerCluster[i_cluster];
+            pixelEnd = pixelStart + pixelsPerCluster[i_cluster+1] -1;
+        }
 
     }
     
