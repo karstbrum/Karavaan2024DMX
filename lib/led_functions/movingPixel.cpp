@@ -44,7 +44,9 @@ void Pixels::movingPixel(uint8_t colorIndex, uint8_t numClusters_, uint8_t clust
             
             // disable the normal pulseIndex and start counting the extra pulseIndex
             normal_pulseIndex = false;
-            extra_pulseIndex +=  static_cast<float>(direction) * (Ts_ / 1000) * (BPM / 60) / freqdiv; // Ts*BPS (s^1 * s^-1)
+
+            // count extra pulseIndex, due to interupts make 1.2 time faster
+            extra_pulseIndex +=  static_cast<float>(direction) * (Ts_ / 1000) * (BPM / 60) * 1.2 / freqdiv; // Ts*BPS (s^1 * s^-1)
 
             // if extra pulseIndex is counted to 0.1 (20 cm gap vs 100cm strip), reset en continue normal
             // the nomrmal_pulseIndex bool is set back to true, so normal count will continue
@@ -59,8 +61,8 @@ void Pixels::movingPixel(uint8_t colorIndex, uint8_t numClusters_, uint8_t clust
         if (normal_pulseIndex) {
             // have to keep track of the previous and current pulseIndex
             prev_pulseIndex = pulseIndex;
-            // count the pulseindex normally
-            pulseIndex +=  static_cast<float>(direction) * (Ts_ / 1000) * (BPM / 60) / freqdiv; // Ts*BPS (s^1 * s^-1)
+            // count the pulseindex normally, due to interupts make 1.2 time faster
+            pulseIndex +=  static_cast<float>(direction) * (Ts_ / 1000) * (BPM / 60) * 1.2 / freqdiv; // Ts*BPS (s^1 * s^-1)
         }
 
     } else {
