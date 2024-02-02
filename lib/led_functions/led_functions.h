@@ -92,4 +92,7 @@ class Pixels {
 
 };
 
+// define a map function
+float mapValue(float old_min, float old_max, float new_min, float new_max, float value);
+
 #endif

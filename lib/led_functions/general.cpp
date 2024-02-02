@@ -100,3 +100,20 @@ void Pixels::setDimmedRange(uint16_t index_start, uint16_t index_end, float alph
     }
 
 }
+
+
+
+// define general function
+// map to new range
+float mapValue(float old_min, float old_max, float new_min, float new_max, float value) {
+
+    // calculate relative position
+    float rel_value = (value - old_min) / (old_max - old_min);
+
+    // map to new range
+    float new_value = new_min + (new_max - new_min) * rel_value;
+
+    // return new value
+    return new_value;
+
+}

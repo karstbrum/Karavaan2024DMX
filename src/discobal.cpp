@@ -127,8 +127,8 @@ void setmode(){
       uint8_t clusters[] = {1, 1, 1, 1, 1, 1, 1, 1};
       uint8_t num_clusters = sizeof(clusters)/sizeof(uint8_t);
       float fade_time = 0.05;
-      float on_time = 1-static_cast<float>(active_states[EXTRA1])/255; 
-      float on_chance = 1-static_cast<float>(active_states[EXTRA2])/255;
+      float on_time = 1-mapValue(0, 255, 0, 1, active_states[EXTRA1]); 
+      float on_chance = 1-mapValue(0, 255, 0, 1, active_states[EXTRA2]);
       LED.strobo(0, num_clusters, clusters, fade_time, on_time, on_chance);
       break; }
 
@@ -137,18 +137,18 @@ void setmode(){
       uint8_t clusters[] = {8};
       uint8_t num_clusters = sizeof(clusters)/sizeof(uint8_t);
       int direction = 1;
-      // between 0 and 0.9
-      float fadetime = static_cast<float>(active_states[EXTRA1])/285;
+      // between 0 and 0.99
+      float fadetime = mapValue(0, 255, 0, 0.99, active_states[EXTRA1]);
       // between 1 and 4
-      uint8_t num_pixels = 1 + static_cast<uint8_t>(floor(static_cast<float>(active_states[EXTRA2])/64));
+      uint8_t num_pixels = (uint8_t)mapValue(0, 255, 1, 4, active_states[EXTRA2]);
       LED.movingPixel(0, num_clusters, clusters, direction, fadetime, num_pixels, true);
       break; }
 
     case 2: {// 
-      // between 0 and 0.9
-      float fadetime = static_cast<float>(active_states[EXTRA1])/285;
-      // flash chance between 1 and 86
-      uint8_t flash_chance = floor(active_states[EXTRA2]/3);
+      // between 0 and 0.99
+      float fadetime = mapValue(0, 255, 0, 0.99, active_states[EXTRA1]);
+      // flash chance between 5 and 75 %
+      uint8_t flash_chance = (uint8_t)mapValue(0, 255, 5, 75, active_states[EXTRA2]);
       LED.flashingPixels(0, flash_chance, fadetime);
       break; }
 
