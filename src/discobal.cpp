@@ -138,7 +138,7 @@ void setmode(){
       uint8_t num_clusters = sizeof(clusters)/sizeof(uint8_t);
       int direction = 1;
       // between 0 and 0.99
-      float fadetime = mapValue(0, 255, 0, 0.99, active_states[EXTRA1]);
+      float fadetime = mapValue(0, 255, 0, 5, active_states[EXTRA1]);
       // between 1 and 4
       uint8_t num_pixels = (uint8_t)mapValue(0, 255, 1, 4, active_states[EXTRA2]);
       LED.movingPixel(0, num_clusters, clusters, direction, fadetime, num_pixels, true);
@@ -146,7 +146,7 @@ void setmode(){
 
     case 2: {// 
       // between 0 and 0.99
-      float fadetime = mapValue(0, 255, 0, 0.99, active_states[EXTRA1]);
+      float fadetime = mapValue(0, 255, 0, 5, active_states[EXTRA1]);
       // flash chance between 5 and 75 %
       uint8_t flash_chance = (uint8_t)mapValue(0, 255, 5, 75, active_states[EXTRA2]);
       LED.flashingPixels(0, flash_chance, fadetime);
