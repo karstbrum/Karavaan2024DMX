@@ -148,7 +148,7 @@ void set_constraint()
 void setmode(){
   switch (active_states[MODE])
     {
-    case 0: // 
+    case 0:
       // use clusters of a pole of a full letter
       uint8_t clusters[] = {2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 4, 5, 4, 6};
       uint8_t num_clusters = sizeof(clusters)/sizeof(uint8_t);
@@ -158,7 +158,7 @@ void setmode(){
       LED.strobo(0, num_clusters, clusters, fade_time, on_time, on_chance);
       break;
 
-    case 1: // 
+    case 1:
       // use clusters of a pole of a full letter
       uint8_t clusters[] =      {2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 4, 5, 4, 6};
       uint8_t cluster_order[] = {4, 3, 2, 1, 0, 11, 10, 12, 13, 5, 6, 7, 8, 9};
@@ -167,13 +167,21 @@ void setmode(){
       LED.moveClockwise(0, num_clusters, clusters, cluster_order, fade_time);
       break;
 
-    case 2: {// 
+    case 2:
       // between 0 and 0.9
       float fadetime = mapValue(0, 255, 0, 5, active_states[EXTRA1]);
       // flash chance between 5 and 75
       uint8_t flash_chance = (uint8_t)mapValue(0, 255, 5, 75, active_states[EXTRA2]);
       LED.flashingPixels(0, flash_chance, fadetime);
-      break; }
+      break;
+
+    case 3:
+      // use clusters of a pole of a full letter
+      uint8_t clusters[] =      {2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 4, 5, 4, 6};
+      uint8_t cluster_order[] = {4, 3, 2, 1, 0, 11, 10, 12, 13, 5, 6, 7, 8, 9};
+      uint8_t num_clusters = sizeof(clusters)/sizeof(uint8_t);
+      LED.blockParty(0, num_clusters, clusters, cluster_order, fade_time);
+      break;
 
     }
 }
