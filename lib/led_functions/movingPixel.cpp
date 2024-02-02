@@ -35,43 +35,8 @@ void Pixels::movingPixel(uint8_t colorIndex, uint8_t numClusters_, uint8_t clust
         }
     }
 
-    // count to 1 or down to zero per beat, depending on direction
-    if (is_disco){
-        
-        // if 0.5 or 1 is reached, count to 0.1 before continuing, for filling the gap
-        // the normal_pulseIndex bool will be set to false, can only continue in normal mode when this bool is changed to true
-        if ((prev_pulseIndex-0.5) * (pulseIndex-0.5) < 0 || (prev_pulseIndex-1) * (pulseIndex-1) < 0 || pulseIndex == 0.5 || pulseIndex == 1) {
-            
-            // disable the normal pulseIndex and start counting the extra pulseIndex
-            normal_pulseIndex = false;
-
-            // count extra pulseIndex, due to interupts make 1.2 time faster
-            extra_pulseIndex +=  static_cast<float>(direction) * (Ts_ / 1000) * (BPM / 60) * 1.2 / freqdiv; // Ts*BPS (s^1 * s^-1)
-
-            // if extra pulseIndex is counted to 0.1 (20 cm gap vs 100cm strip), reset en continue normal
-            // the nomrmal_pulseIndex bool is set back to true, so normal count will continue
-            if (extra_pulseIndex >= 0.1) {
-                normal_pulseIndex = true;
-                extra_pulseIndex = 0;
-            }
-
-        } 
-        
-        // always count if normal pulseIndex is true
-        if (normal_pulseIndex) {
-            // have to keep track of the previous and current pulseIndex
-            prev_pulseIndex = pulseIndex;
-            // count the pulseindex normally, due to interupts make 1.2 time faster
-            pulseIndex +=  static_cast<float>(direction) * (Ts_ / 1000) * (BPM / 60) * 1.2 / freqdiv; // Ts*BPS (s^1 * s^-1)
-        }
-
-    } else {
-        // count the pulseindex normally
-        pulseIndex +=  static_cast<float>(direction) * (Ts_ / 1000) * (BPM / 60) / freqdiv; // Ts*BPS (s^1 * s^-1)
-        // set other values to safe
-        normal_pulseIndex = true;
-        extra_pulseIndex = 0;
-    }
+    // count the pulseindex normally
+    pulseIndex +=  static_cast<float>(direction) * (Ts_ / 1000) * (BPM / 60) / freqdiv; // Ts*BPS (s^1 * s^-1)
 
     // if pulseindex exceeds 1, select the cluster to light up
     if (pulseIndex > 1 || pulseIndex < 0) {
@@ -126,8 +91,7 @@ void Pixels::movingPixel(uint8_t colorIndex, uint8_t numClusters_, uint8_t clust
                 if (norm_pos >= (pos_array[i_pixel] - norm_dist) && norm_pos <= (pos_array[i_pixel] + norm_dist)){
 
                     // just make it 1 for continuity 
-                    // only set new dimvalue when normal pulseIndex continues
-                    dimvalue = normal_pulseIndex ? 1 : 0;
+                    dimvalue = 1;
 
                 }
 
