@@ -77,7 +77,7 @@ void Pixels::movingPixel(uint8_t colorIndex, uint8_t numClusters_, uint8_t clust
 
         // Let the start be smooth by making a half sine (0 to pi give result 0 to 1)
         // loop through all LEDs in cluster to check the value
-        for (uint16_t i_led = 0; i_led < pixelEnd - pixelStart; i_led++) {
+        for (uint16_t i_led = 0; i_led <= pixelEnd - pixelStart; i_led++) {
 
             // define normalized position of led
             float norm_pos = i_led / static_cast<float>(pixelEnd-pixelStart);
