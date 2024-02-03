@@ -183,6 +183,13 @@ void setmode(){
       LED.blockParty(0, num_clusters, clusters, cluster_order, fade_time);
       break;
 
+    case 4:
+      // use clusters of a pole of a full letter
+      uint8_t clusters[] =      {2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 4, 5, 4, 6};
+      uint8_t cluster_order[] = {4, 3, 2, 1, 0, 11, 10, 12, 13, 5, 6, 7, 8, 9};
+      uint8_t num_clusters = sizeof(clusters)/sizeof(uint8_t);
+      LED.colorsSwitchingSides(0, num_clusters, clusters, cluster_order);
+      break;
     }
 }
 
