@@ -32,7 +32,7 @@ void Pixels::flashingPixels(uint8_t colorIndex, uint8_t flash_chance, float fade
 
     for (uint16_t i_led = 0; i_led < totalPixels; i_led++) {
 
-        if (pulseIndex < 0.5  & flash_on[i_led]){
+        if (pulseIndex < 0.5  && flash_on[i_led]){
             dimvalue = 1;
         } else {
             dimvalue = 0;
