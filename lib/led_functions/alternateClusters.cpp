@@ -32,14 +32,19 @@ void Pixels::alternateClusters(bool clustergroup1[MAXSIDES_L], bool clustergroup
     uint16_t pixelStart = 0;
     uint16_t pixelEnd = pixelsPerSide[0]-1;
 
+    Pixels::setAlpha(fadetime);   
+
     for (uint8_t i_cluster = 0; i_cluster < numSides; i_cluster++) {
         if (clustergroup1[i_cluster] && group1_on){
-            Pixels::setDimmedRange(pixelStart, pixelEnd, fadetime, 0, 1);
+            Pixels::setDimmedRange(pixelStart, pixelEnd, 0, 1);
         } else if (clustergroup2[i_cluster] && group2_on) {
-            Pixels::setDimmedRange(pixelStart, pixelEnd, fadetime, 1, 1);
+            Pixels::setDimmedRange(pixelStart, pixelEnd, 1, 1);
         }
-        else {
-            Pixels::setDimmedRange(pixelStart, pixelEnd, fadetime, 0, 0);
+        else if (clustergroup1[i_cluster]){
+            Pixels::setDimmedRange(pixelStart, pixelEnd, 0, 0);
+        } 
+        else if (clustergroup2[i_cluster]) {
+            Pixels::setDimmedRange(pixelStart, pixelEnd, 1, 0);
         }
 
         // define start and end pixel of the cluster

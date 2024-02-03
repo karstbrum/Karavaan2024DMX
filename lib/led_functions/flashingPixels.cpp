@@ -30,6 +30,8 @@ void Pixels::flashingPixels(uint8_t colorIndex, uint8_t flash_chance, float fade
     // define dimvalue upfront
     float dimvalue = 0;
 
+    Pixels::setAlpha(fadetime);
+
     for (uint16_t i_led = 0; i_led < totalPixels; i_led++) {
 
         if (pulseIndex < 0.5  && flash_on[i_led]){
@@ -40,7 +42,7 @@ void Pixels::flashingPixels(uint8_t colorIndex, uint8_t flash_chance, float fade
 
         // set the value of the LED
         //strip->setRange(pixelStart+i_led, pixelStart+i_led, 0, dimvalue);
-        Pixels::setDimmedRange(i_led, i_led, fadetime, 0, dimvalue);        
+        Pixels::setDimmedRange(i_led, i_led, 0, dimvalue);        
 
     }
 

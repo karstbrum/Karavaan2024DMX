@@ -126,10 +126,10 @@ void setmode(){
       // use clusters of a pole of a full letter
       uint8_t clusters[] = {1, 1, 1, 1, 1, 1, 1, 1};
       uint8_t num_clusters = sizeof(clusters)/sizeof(uint8_t);
-      float fade_time = 0.05;
+      float fadetime = 0.05;
       float on_time = 1-mapValue(0, 255, 0, 1, active_states[EXTRA1]); 
       float on_chance = 1-mapValue(0, 255, 0, 1, active_states[EXTRA2]);
-      LED.strobo(0, num_clusters, clusters, fade_time, on_time, on_chance);
+      LED.strobo(0, num_clusters, clusters, fadetime, on_time, on_chance);
       break; }
 
     case 1: {// 
@@ -152,6 +152,15 @@ void setmode(){
       LED.flashingPixels(0, flash_chance, fadetime);
       break; }
 
+    case 3: {// 
+      // use clusters of a pole of a full letter
+      bool clusters1[] = {1, 1, 1, 1, 0, 0, 0, 0};
+      bool clusters2[] = {0, 0, 0, 0, 1, 1, 1, 1};
+      float fadetime = mapValue(0, 255, 0, 5, active_states[EXTRA1]); 
+      float on_time = mapValue(0, 255, 0.02, 0.8, active_states[EXTRA2]);
+      LED.alternateClusters(clusters1, clusters2, fadetime, on_time);
+      break; }
+
     }
 }
 
@@ -169,6 +178,8 @@ void setmotor(){
 void LightsTaskcode( void * pvParameters ){
 
   pinMode(motor_pin, OUTPUT);
+
+  active_states[MODE] = 1;
 
   // another option to have a timed loop is to use vTaskDelayUntil(), have to look into it first
   for(;;){

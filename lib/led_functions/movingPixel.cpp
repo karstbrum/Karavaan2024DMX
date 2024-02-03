@@ -67,6 +67,8 @@ void Pixels::movingPixel(uint8_t colorIndex, uint8_t numClusters_, uint8_t clust
     uint16_t pixelStart = 0;
     uint16_t pixelEnd = pixelsPerCluster[0] - 1;
 
+    Pixels::setAlpha(fadetime);
+
     // loop through all clusters to set the moving LEDs per cluster
     for (uint8_t i_cluster = 0; i_cluster < numClusters; i_cluster++) {
 
@@ -99,7 +101,7 @@ void Pixels::movingPixel(uint8_t colorIndex, uint8_t numClusters_, uint8_t clust
 
             // set the value of the LED
             //strip->setRange(pixelStart+i_led, pixelStart+i_led, 0, dimvalue);
-            Pixels::setDimmedRange(pixelStart+i_led, pixelStart+i_led, fadetime, 0, dimvalue);        
+            Pixels::setDimmedRange(pixelStart+i_led, pixelStart+i_led, 0, dimvalue);        
 
         }
 

@@ -85,14 +85,17 @@ float Pixels::randomFloat() {
     return 0.1 + static_cast<float>(randnum) / 125;
 }
 
-void Pixels::setDimmedRange(uint16_t index_start, uint16_t index_end, float alpha, uint8_t color_index,  float input){
-
+void Pixels::setAlpha(float dim_time){
     // calculate the alpha discrete value based on alpha
     // alpha is the actual time it takes to go from 1 to 0.01
     // number of samples to to go to the values
-    uint16_t num_samples = round(alpha/Ts) - 1;
+    float num_samples = round(dim_time/Ts*1000) - 1;
     // get the alpha value, only calculate when num_samples > 0
-    float alpha_disc = (num_samples > 0) ? std::pow(0.01, 1/num_samples) : 0;
+    alpha_disc = (num_samples > 0) ? std::pow(0.01, 1/num_samples) : 0;
+
+}
+
+void Pixels::setDimmedRange(uint16_t index_start, uint16_t index_end, uint8_t color_index,  float input){
 
     for(uint16_t i_led = index_start; i_led<=index_end; i_led++){
         // this approach will add the input to the brightness, so if input is e.g. 0.5

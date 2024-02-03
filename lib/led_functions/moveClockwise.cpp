@@ -49,16 +49,18 @@ void Pixels::moveClockwise(uint8_t colorIndex, uint8_t numClusters, uint8_t clus
     uint16_t pixelStart = 0;
     uint16_t pixelEnd = pixelsPerCluster[0] -1;
 
+    setAlpha(fadetime);
+
     for (uint8_t i_cluster = 0; i_cluster < numClusters; i_cluster++) {
 
         if(clusterIndex == cluster_order[i_cluster]){
             // set input of 1 to the dim states (x[k] = x[k-1] + 1)
             // color index 0
-            setDimmedRange(pixelStart, pixelEnd, fadetime,  0, 1);
+            setDimmedRange(pixelStart, pixelEnd, 0, 1);
         } else {
             // set input of 0 to the dim states (x[k] = x[k-1] + 0)
             // color index 0
-            setDimmedRange(pixelStart, pixelEnd, fadetime,  0, 0);
+            setDimmedRange(pixelStart, pixelEnd, 0, 0);
         }
 
         // count to next number of pixels

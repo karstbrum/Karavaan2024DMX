@@ -36,7 +36,8 @@ class Pixels {
         void setBPM(float BPM_);
 
         // dimmer system
-        void setDimmedRange(uint16_t index_start, uint16_t index_end, float alpha = 0, uint8_t color_index = 0,  float input = 0);
+        void setAlpha(float dim_time = 0);
+        void setDimmedRange(uint16_t index_start, uint16_t index_end, uint8_t color_index = 0,  float input = 0);
 
         // light functions
         // set fixed color
@@ -69,6 +70,9 @@ class Pixels {
         uint16_t totalPixels;
         float BPM = 100;
         float Ts;
+
+        // set the alpha value for dimmer
+        float alpha_disc = 0;
 
         // dimstates for slow fading
         float dimstate[MAXNUMPIXELS];

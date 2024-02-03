@@ -37,6 +37,8 @@ void Pixels::blockParty(uint8_t colorIndex, uint8_t numClusters, uint8_t cluster
     uint16_t pixelStart = 0;
     uint16_t pixelEnd = ceil(pixelsPerCluster[0] * percentage);
 
+    setAlpha(fadetime);
+
     for (uint8_t i_cluster = 0; i_cluster < numClusters; i_cluster++) {
         uint16_t pixelsPerBlock = ceil(pixelsPerCluster[i_cluster] * percentage);
 
@@ -44,10 +46,10 @@ void Pixels::blockParty(uint8_t colorIndex, uint8_t numClusters, uint8_t cluster
             if (block % 2 == i_cluster % 2) {
                 // even blocks versus even clusters, should switch the order of 2 colors per cluster
                 // color index 0
-            setDimmedRange(pixelStart, pixelEnd, fadetime,  0, 1);
+            setDimmedRange(pixelStart, pixelEnd, 0, 1);
             } else {
                 // color index 1
-            setDimmedRange(pixelStart, pixelEnd, fadetime,  1, 1);
+            setDimmedRange(pixelStart, pixelEnd, 1, 1);
             }
             pixelStart += pixelEnd + 1;
             pixelEnd = pixelStart + pixelsPerBlock -1;
