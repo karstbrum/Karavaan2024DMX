@@ -7,38 +7,17 @@
 #include "WProgram.h"
 #endif
 
-#include "Adafruit_NeoPixel.h"
+//#include "Adafruit_NeoPixel.h"
+#include "esp32_digital_led_lib.h"
 #include <math.h>
 
 #define MAXNUMCOLORS 100
 #define MAXNUMPIXELS 1000
 #define MAXSIDES 100
-#define MAXPINS 5
+#define MAXPINS 8
 
 #define RISETIME 1
 #define FALLTIME 0.1
-
-
-class Strips {
-
-    public:
-        // constructor create empty class to make array possible
-        Strips();
-
-        // setup properties of the class
-        void setupStrip(uint16_t LEDsPerPin, uint8_t LEDPin);
-
-        // define the colors
-        void setPixel(uint16_t pixel, uint32_t colorCode);
-
-        // show color
-        void show();
-
-    private:
-
-        Adafruit_NeoPixel* LED;
-
-};
  
 class RGBW {
 
@@ -83,14 +62,14 @@ class RGBW {
 
     private:
 
+        // define the strands
+        strand_t STRANDS[MAXPINS];
+        strand_t * strands[MAXPINS];
+
         //color vectors {{  W   R   G   B  }}
         float colors[MAXNUMCOLORS][4];
 
         uint32_t colorCode[MAXNUMPIXELS];
-        
-        Adafruit_NeoPixel* LED;
-
-        Strips strip[MAXPINS];
 
 };
 

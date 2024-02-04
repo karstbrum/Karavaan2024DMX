@@ -179,8 +179,6 @@ void LightsTaskcode( void * pvParameters ){
 
   pinMode(motor_pin, OUTPUT);
 
-  active_states[MODE] = 1;
-
   // another option to have a timed loop is to use vTaskDelayUntil(), have to look into it first
   for(;;){
     if(millis()-loopTime >= Ts){

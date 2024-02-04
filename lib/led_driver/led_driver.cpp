@@ -7,43 +7,43 @@
 #include "led_driver.h"
 #include <math.h>
 
-Strips::Strips() {
-}
-
-void Strips::setupStrip(uint16_t LEDsPerPin, uint8_t LEDPin) {
-    LED = new Adafruit_NeoPixel(LEDsPerPin, LEDPin, NEO_GRBW + NEO_KHZ800);
-    LED->begin();
-}
-
-void Strips::setPixel(uint16_t pixel, uint32_t colorCode){
-    LED->setPixelColor(pixel, colorCode);
-}
-
-void Strips::show() {
-    LED->show();
-}
-
 RGBW::RGBW(uint16_t LEDsPerPin_[], uint8_t LEDpins_[], uint8_t numPins_){
 
     // get total number of LEDS
     numLEDs = 0;
     numPins = numPins_;
+
+    Serial.begin(115200);
+
+    // init led driver (sub library)
+    digitalLeds_initDriver();
     
     // loop through different connected strips and setup
     for (uint8_t k = 0;k < numPins;k++) {
+
+        // define number of LEDs, pins and pin numbers
         numLEDs += LEDsPerPin_[k];
         LEDsPerPin[k] = LEDsPerPin_[k];
         LEDPins[k] = LEDpins_[k];
-        strip[k].setupStrip(LEDsPerPin[k], LEDPins[k]);
-    }
 
+        // add strips to the pins
+        // just use k as RMT channel
+        STRANDS[k] = {.rmtChannel = k, .gpioNum = LEDPins[k], .ledType = LED_SK6812W_V1, .brightLimit = 64, .numPixels = LEDsPerPin[k]};
+        // set ouput to low
+        gpioSetup(STRANDS[k].gpioNum, OUTPUT, LOW);
+        // pointer to strands
+        strands[k] = { &STRANDS[k] };
+    }
+    // add strands can use rc for troubleshooting
+    int rc = digitalLeds_addStrands(strands, numPins);
+    
     // standard dimmer off, have to set in main code
     // dimmer is the max brightness, extradimmer is meant for setting certain modes
     dimmer = 0;
     prevDimmer = 0;
 
-    // add standard white as a color, will be overwritten by addColor()
-    colors[0][0] = 255;
+    // add fully off as a color, will be overwritten by addColor()
+    colors[0][0] = 0;
     colors[0][1] = 0;
     colors[0][2] = 0;
     colors[0][3] = 0;
@@ -51,6 +51,7 @@ RGBW::RGBW(uint16_t LEDsPerPin_[], uint8_t LEDpins_[], uint8_t numPins_){
     RGBW::setColorsAll();
 
 };
+
 
 void RGBW::addColor(uint8_t W, uint8_t R, uint8_t G, uint8_t B) {
     colors[numOfColors][0] = W;
@@ -149,15 +150,17 @@ void RGBW::setStrip() {
 
     for (uint8_t k = 0; k < numPins; k++) {           // for each strip   
         for (uint16_t l = 0; l < LEDsPerPin[k]; l++) {      // For each pixel in strip.
-            strip[k].setPixel(l, colorCode[pixelIndex]);        //  Set pixel color 
+            // set the colors individually for the LED library
+            strands[k]->pixels[pixelIndex].w = RGBWStates[pixelIndex][0];
+            strands[k]->pixels[pixelIndex].r = RGBWStates[pixelIndex][1];
+            strands[k]->pixels[pixelIndex].g = RGBWStates[pixelIndex][2];
+            strands[k]->pixels[pixelIndex].b = RGBWStates[pixelIndex][3];
             pixelIndex += 1;
         };
         
     };
-    
-    // try to run this loop in parallel to make the code faster
-    for (uint8_t k = 0; k < numPins; k++) {           // for each strip 
-        strip[k].show();      //  Set strip
-    };
+
+    // set the colors of all strands
+    digitalLeds_drawPixels(strands, numPins);
     
 };
