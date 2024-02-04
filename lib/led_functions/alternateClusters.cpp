@@ -20,13 +20,12 @@ void Pixels::alternateClusters(bool clustergroup1[MAXSIDES_L], bool clustergroup
     pulseIndex = pulseIndex > 1 ? pulseIndex - 1 : pulseIndex;
     
     // first check modulus condition
-    bool group1_on = (on_time > 0.5 && pulseIndex <= 0.25) && pulseIndex < 0 + on_time/4 ? true : false;
-    bool group2_on = (on_time > 0.5 && pulseIndex >= 0.75) && pulseIndex > 1 - on_time/4 ? true : false;
+    bool group1_on = (on_time > 0.5 && pulseIndex <= 0.25) && pulseIndex <= 0 + (on_time/2 - 0.25) ? true : false;
+    bool group2_on = (on_time > 0.5 && pulseIndex >= 0.75) && pulseIndex >= 1 - (on_time/2 - 0.25) ? true : false;
 
-    // check default condition
-    group1_on = group1_on || (pulseIndex > 0.75 - on_time/2 && pulseIndex < 0.75 + on_time/2) ? true : false;
-    group2_on = group2_on || (pulseIndex > 0.25 - on_time/2 && pulseIndex < 0.25 + on_time/2) ? true : false;
-
+    // check default condition (extend statement with or condition)
+    group1_on = group1_on || (pulseIndex >= 0.75 - on_time/2 && pulseIndex <= 0.75 + on_time/2) ? true : false;
+    group2_on = group2_on || (pulseIndex >= 0.25 - on_time/2 && pulseIndex <= 0.25 + on_time/2) ? true : false;
 
     // count up on starting en ending pixel per side
     uint16_t pixelStart = 0;

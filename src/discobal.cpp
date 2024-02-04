@@ -8,7 +8,7 @@
 #include<esp_now.h>
 
 // Sampling time (Ts)
-#define Ts 20
+#define Ts 14
 
 // discoball states 
 const uint8_t disco_dmx_size = 32;
@@ -148,7 +148,7 @@ void setmode(){
       // between 0 and 0.99
       float fadetime = mapValue(0, 255, 0, 5, active_states[EXTRA1]);
       // flash chance between 5 and 75 %
-      uint8_t flash_chance = (uint8_t)mapValue(0, 255, 5, 75, active_states[EXTRA2]);
+      uint8_t flash_chance = (uint8_t)mapValue(0, 255, 5, 50, active_states[EXTRA2]);
       LED.flashingPixels(0, flash_chance, fadetime);
       break; }
 

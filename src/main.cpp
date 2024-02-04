@@ -10,7 +10,7 @@
 
 
 // Sampling time (Ts)
-#define Ts 33
+#define Ts 10
 
 // max numbers for settings
 #define MAXCOLORS 10
