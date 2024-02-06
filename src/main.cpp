@@ -57,19 +57,64 @@ uint8_t active_states[9];
 TaskHandle_t ControllerTask;
 TaskHandle_t LEDTask;
 
+// bottom post y start and end (bottom to top)
+float y_b1 = -0.2;
+float y_b2 = 0;
+
+// top post y start and end (bottom to top)
+float y_t1 = 0;
+float y_t2 = 0.2;
+
+// x positions start & diff
+float x_1 = 0.2;
+float x_d = (0.5-x_1)/4;
+
+// bottom letter (bottom to top)
+float yl_b1 = -0.3;
+float yl_b2 = -0.15;
+
+// top letter (bottom to top)
+float yl_t1 = -0.15;
+float yl_t2 = 0;
+// for the R
+float yl_t3 = (yl_t1/2) ;
+float yl_t4 = (yl_t1/2);
+
+// start position 0, only diff
+float xl_d = (0.5-x_1)/4;
+
+// define relative start and end position of the sides
+float start_pos_x[] = {-x_1, -x_1,  -x_1-1*x_d, -x_1-1*x_d, -x_1-2*x_d, -x_1-2*x_d, -x_1-3*x_d, -x_1-3*x_d, -x_1-4*x_d, -x_1-4*x_d,
+                        x_1,  x_1,   x_1+1*x_d,  x_1+1*x_d,  x_1+2*x_d,  x_1+2*x_d,  x_1+3*x_d,  x_1+3*x_d,  x_1+4*x_d,  x_1+4*x_d,
+                       -4*xl_d,   -4*xl_d,  -3*xl_d,  -4*xl_d, -2*xl_d, -2*xl_d, -2*xl_d,   -1*xl_d, -2*xl_d,
+                          xl_d,  5/4*xl_d, 6/4*xl_d, 7/4*xl_d,  3*xl_d,  3*xl_d,  3*xl_d,  7/2*xl_d,  4*xl_d, 4*xl_d};
+float start_pos_y[] = {y_b1, y_t1, y_b1, y_t1, y_b1, y_t1, y_b1, y_t1, y_b1, y_t1,
+                       y_b1, y_t1, y_b1, y_t1, y_b1, y_t1, y_b1, y_t1, y_b1, y_t1,
+                       yl_b1, yl_t1, yl_t2, yl_b2, yl_b1, yl_t1, yl_t2, yl_t4, yl_b2,
+                       yl_t2, yl_b2, yl_b1, yl_t1, yl_b1, yl_t1, yl_t2, yl_b2, yl_b1, yl_t1};
+float end_pos_x[] = {-x_1, -x_1,  -x_1-1*x_d, -x_1-1*x_d, -x_1-2*x_d, -x_1-2*x_d, -x_1-3*x_d, -x_1-3*x_d, -x_1-4*x_d, -x_1-4*x_d,
+                      x_1,  x_1,   x_1+1*x_d,  x_1+1*x_d,  x_1+2*x_d,  x_1+2*x_d,  x_1+3*x_d,  x_1+3*x_d,  x_1+4*x_d,  x_1+4*x_d,
+                       -4*xl_d,   -4*xl_d,  -4*xl_d,  -3*xl_d, -2*xl_d, -2*xl_d,  -1*xl_d, -2*xl_d, -1*xl_d,
+                      5/4*xl_d,  6/4*xl_d, 7/4*xl_d,   2*xl_d,  3*xl_d,  3*xl_d, 7/2*xl_d,  4*xl_d,  4*xl_d, 4*xl_d};
+float end_pos_y[] = {y_b2, y_t2, y_b2, y_t2, y_b2, y_t2, y_b2, y_t2, y_b2, y_t2,
+                     y_b2, y_t2, y_b2, y_t2, y_b2, y_t2, y_b2, y_t2, y_b2, y_t2,
+                     yl_b2, yl_t2, yl_t1, yl_b1, yl_b2, yl_t2, yl_t1, yl_t3, yl_b1,
+                     yl_t1, yl_b1, yl_b2, yl_t2, yl_b2, yl_t2, yl_t1, yl_b1, yl_b2, yl_t2};
+
+// define number of leds per side
 uint16_t LEDsPerSide[] = {18, 18, 18, 18, 18, 18, 18, 18, 18, 18,
                           18, 18, 18, 18, 18, 18, 18, 18, 18, 18,
                           12, 13, 17, 17, 12, 12, 13, 13, 17,
                           12, 13, 13, 12, 12, 13, 13, 13, 13, 12};
+// get number of sides
 uint8_t numSides = sizeof(LEDsPerSide) / sizeof(uint16_t);
 uint8_t sidesPerPin[] = {10, 10, 9, 10};
 uint8_t LEDPins[] = {25, 26, 32, 33};
-//uint8_t LEDPins[] = {25};
 uint8_t numPins = sizeof(LEDPins);
 Pixels LED(numSides, LEDsPerSide, numPins, sidesPerPin, LEDPins, Ts);
 
-// pointers to objects
-Pixels *LED_pointer = &LED;
+// the LED positions are defined in the setup loop
+// can only declare variables in global space
 
 // sync states with DMX controller if input changed
 void sync_states()
@@ -191,6 +236,9 @@ void setmode(){
 // Task for handling the LEDs on core 1
 void LightsTaskcode(void *pvParameters)
 {
+
+  // define LED positions
+  LED.definePositions(start_pos_x, start_pos_y, end_pos_x, end_pos_y);
 
   // TIME VARIABLES
   // Time spent in the main loop

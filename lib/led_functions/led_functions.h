@@ -23,6 +23,9 @@ class Pixels {
         // constructor
         Pixels(uint8_t numSides_, uint16_t pixelsPerSide_[], uint8_t numPins_, uint8_t sidesPerPin_[], uint8_t LEDPin_[], float Ts_);
 
+        // function for defining the positoins of individual LEDs
+        void definePositions(float x_start[], float y_start[], float x_end[], float y_end[]);
+
         // display current color
         void activateColor();
  
@@ -70,6 +73,14 @@ class Pixels {
         uint16_t totalPixels;
         float BPM = 100;
         float Ts;
+
+        // pixel positions
+        // x, y, l, a
+        const uint8_t XPOS = 0;
+        const uint8_t YPOS = 1;
+        const uint8_t LPOS = 2;
+        const uint8_t APOS = 3;
+        float pixel_pos[4][MAXNUMPIXELS];
 
         // set the alpha value for dimmer
         float alpha_disc = 0;

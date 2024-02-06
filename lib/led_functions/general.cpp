@@ -47,6 +47,63 @@ Pixels::Pixels(uint8_t numSides_, uint16_t pixelsPerSide_[], uint8_t numPins_, u
     srand(static_cast <unsigned> (time(0)));
 };
 
+void Pixels::definePositions(float x_start[], float y_start[], float x_end[], float y_end[]){
+
+    // The first and last LED are defined on:
+    // (x, y) = (x_start + x_spacing/2, y_start + y_spacing/2)
+    // (x, y) = (x_end   - x_spacing/2, y_end   - y_spacing/2)
+
+    // define pixel index
+    uint16_t i_pixel = 0;
+
+    // loop through all sides
+    for (uint16_t i_side = 0; i_side < numSides; i_side++) {
+
+        // define the spacing between the les on the current side
+        float x_spacing = (x_end[i_side]-x_start[i_side]) / (pixelsPerSide[i_side]);
+        float y_spacing = (y_end[i_side]-y_start[i_side]) / (pixelsPerSide[i_side]);
+
+        float x_first = x_start[i_side] + x_spacing/2;
+        float y_first = y_start[i_side] + y_spacing/2;
+
+        // loop through all pixels on the current side
+        for (uint16_t k = 0; k < pixelsPerSide[i_side]; k++){
+            
+            // define x and y position of the pixel
+            float x = x_first + k*x_spacing;
+            float y = y_first + k*y_spacing;
+
+            // define distance to (0,0)
+            // just take pythagoras of x and y position, x^2 + y^2
+            float xysquared = std::pow(x, 2) + std::pow(y, 2);
+            // take the root of x^2 + y^2
+            float l = std::pow(xysquared, 0.5);
+
+            // define the angle.
+            // start (x,y) = (+x,0), counterclockwise
+            float a = acos(x/l);
+
+            // if the y position is positive, a is within [0    pi]
+            // if the y position is negative, a is within [pi 2*pi]
+            a = y < 0 ? 2*PI-a : a;
+
+            // add numbers to pos data array
+            pixel_pos[XPOS][i_pixel] = x;
+            pixel_pos[YPOS][i_pixel] = y;
+            pixel_pos[LPOS][i_pixel] = l;
+            pixel_pos[APOS][i_pixel] = a;
+
+            printf("X: %.3f, Y: %.3f, l: %.3f, a: %.1f\n", x, y, l, 360*a/(2*PI));
+
+            // increment pixels
+            i_pixel++;
+
+        }
+
+    }
+
+}
+
 void Pixels::defineFirstColors() { 
     strip->addColor(0,   0,   0,   0); 
     strip->addColor(0,   0,   0,   0); 
