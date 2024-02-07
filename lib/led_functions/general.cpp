@@ -93,8 +93,6 @@ void Pixels::definePositions(float x_start[], float y_start[], float x_end[], fl
             pixel_pos[LPOS][i_pixel] = l;
             pixel_pos[APOS][i_pixel] = a;
 
-            printf("X: %.3f, Y: %.3f, l: %.3f, a: %.1f\n", x, y, l, 360*a/(2*PI));
-
             // increment pixels
             i_pixel++;
 
