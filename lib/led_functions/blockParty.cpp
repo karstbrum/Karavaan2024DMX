@@ -13,9 +13,7 @@
 #include <unordered_map>
 
 // a show of blocks of 2 colors
-void Pixels::blockParty(uint8_t colorIndex, uint8_t numClusters, uint8_t clusters[], uint8_t cluster_order[], float fadetime) {
-    // set sample time
-    float Ts_ = Ts;
+void Pixels::blockParty(uint8_t numClusters, uint8_t clusters[], uint8_t cluster_order[], float fadetime) {
 
     uint8_t pixelsPerCluster[MAXSIDES_L];
     uint8_t sideIndex = 0;
@@ -27,7 +25,7 @@ void Pixels::blockParty(uint8_t colorIndex, uint8_t numClusters, uint8_t cluster
         }
     }
 
-    pulseIndex += (Ts_ / 1000) * (BPM / 60);
+    pulseIndex += (Ts / 1000) * (BPM / 60);
 
     // set all strips to off before making pattern
     strip->setColorsAll(0, 0);

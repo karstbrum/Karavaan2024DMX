@@ -14,9 +14,6 @@
 
 // clusters turn on in a clockwise direction
 void Pixels::moveClockwise(uint8_t colorIndex, uint8_t numClusters, uint8_t clusters[], uint8_t cluster_order[], int direction, float fadetime) {
-    // set sample time
-    float Ts_ = Ts;
-
     // direction determines they way direction of clusters
 
     // define clusters
@@ -32,16 +29,21 @@ void Pixels::moveClockwise(uint8_t colorIndex, uint8_t numClusters, uint8_t clus
         }
     }
 
-    pulseIndex += (Ts_ / 1000) * (BPM / 60);
+    pulseIndex += (Ts / 1000) * (BPM / 60);
 
     // set all strips to off before making pattern
     strip->setColorsAll(0, 0);
 
-    // if pulseindex exceeds 1, move one cluster up
+    int initialClusterIndex = direction == 1 ? clusterIndex : numClusters;
+    // if pulseindex exceeds 1, move one cluster
     if (pulseIndex > 1) {
         pulseIndex -= 1;
         // select random numbers
-        clusterIndex += direction;
+        if (clusterIndex >= 0 && clusterIndex < numClusters + 1) {
+            clusterIndex += direction;
+        } else {
+            clusterIndex == initialClusterIndex;
+        }
     }
 
     // turn on lights per cluster
