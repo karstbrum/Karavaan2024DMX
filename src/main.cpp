@@ -10,7 +10,7 @@
 
 
 // Sampling time (Ts)
-#define Ts 10
+#define Ts 12
 
 // max numbers for settings
 #define MAXCOLORS 10
@@ -230,8 +230,18 @@ void setmode(){
       LED.blockParty(0, num_clusters, clusters, cluster_order, fadetime);
       break; }
 
+    case 4: {
+      // use clusters of a pole of a full letter
+      uint8_t num_angles = 3;
+      float width_angle = 2.0f*PI/36.0f;
+      uint8_t direction = 1;
+      float fadetime = 0.5;
+      LED.twoColorRotation(0, num_angles, width_angle, direction, fadetime);
+      break; }
+
     }
 }
+
 
 // Task for handling the LEDs on core 1
 void LightsTaskcode(void *pvParameters)
@@ -243,6 +253,8 @@ void LightsTaskcode(void *pvParameters)
   // TIME VARIABLES
   // Time spent in the main loop
   int loopTime = 0;
+
+  active_states[MODE] = 4;
 
   // another option to have a timed loop is to use vTaskDelayUntil(), have to look into it first
   for (;;)
@@ -267,6 +279,7 @@ void LightsTaskcode(void *pvParameters)
       LED.changeColor(active_states[WHITE], active_states[RED], active_states[GREEN], active_states[BLUE]);
 
       // set BPM
+      active_states[BPM] = 30;
       LED.setBPM(active_states[BPM]);
 
       // set mode

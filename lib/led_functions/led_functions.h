@@ -55,7 +55,7 @@ class Pixels {
         void alternateClusters(bool clustergroup1[MAXSIDES_L], bool clustergroup2[MAXSIDES_L], float fadetime = 0, float on_time = 0.5);
 
         // functions based on coordinates
-        void fixedRotation(uint8_t colorIndex, uint8_t num_angles, float width_angle, uint8_t direction, float fadetime = 0);
+        void twoColorRotation(uint8_t colorIndex, uint8_t num_angles, float width_angle, uint8_t direction, float fadetime = 0);
         
         // variables for counting up clusters
         int clusterIndex = 0;
