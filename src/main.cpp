@@ -190,6 +190,12 @@ void setmode(){
       uint8_t num_clusters = sizeof(clusters)/sizeof(uint8_t);
       LED.colorsSwitchingSides(0, num_clusters, clusters, cluster_order);
       break;
+
+    case 5:
+      // use clusters of a pole of a full letter
+      float fadetime = mapValue(0, 255, 0, 5, active_states[EXTRA1]);
+      LED.everyXseconds(fadetime);
+    break;
     }
 }
 

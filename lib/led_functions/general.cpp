@@ -108,6 +108,20 @@ void Pixels::setDimmedRange(uint16_t index_start, uint16_t index_end, float alph
 
 }
 
+void Pixels::everyXBeats(int beats, const std::function<void()>& callback) {
+        pulseIndex += (Ts / 1000) * (BPM / 60);
+
+        // if pulseindex exceeds 1
+        if (pulseIndex > 1) {
+            pulseIndex -= 1;
+
+            // Run the callback function every x beats
+            if (static_cast<int>(pulseIndex * beats) % beats == 0) {
+                callback();
+            }
+        }
+}
+
 
 
 // define general function

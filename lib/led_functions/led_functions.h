@@ -49,6 +49,7 @@ class Pixels {
         void flashingPixels(uint8_t colorIndex, uint8_t flash_chance, float fadetime = 0);
         void blockParty(uint8_t colorIndex, uint8_t numClusters_ = 0, uint8_t clusters_[MAXSIDES_L] = {}, uint8_t cluster_order_[MAXSIDES_L] = {}, float fadetime = 0.1);
         void colorsSwitchingSides(uint8_t colorIndex, uint8_t numClusters_ = 0, uint8_t clusters_[MAXSIDES_L] = {}, uint8_t cluster_order_[MAXSIDES_L] = {});
+        void everyXseconds(float fadetime = 0);
         // variables for counting up clusters
         int clusterIndex = 0;
 
@@ -58,6 +59,7 @@ class Pixels {
         // number of sides
         uint8_t numSides;
 
+        void everyXBeats(int beats, const std::function<void()>& callback);
     private:
 
         // basic functions
