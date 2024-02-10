@@ -195,7 +195,6 @@ void setmode(){
   switch (active_states[MODE])
     {
     case 0: {
-      // use clusters of a pole of a full letter 
       uint8_t clusters[] = {2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 4, 5, 4, 6};
       uint8_t num_clusters = sizeof(clusters)/sizeof(uint8_t);
       float fade_time = 0.05;
@@ -206,12 +205,12 @@ void setmode(){
     }
 
     case 1: {
-      // use clusters of a pole of a full letter
       uint8_t clusters[] =      {2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 4, 5, 4, 6};
       uint8_t cluster_order[] = {4, 3, 2, 1, 0, 11, 10, 12, 13, 5, 6, 7, 8, 9};
       uint8_t num_clusters = sizeof(clusters)/sizeof(uint8_t);
       float fade_time = mapValue(0, 255, 0, 5, active_states[EXTRA1]);
-      LED.moveClockwise(0, num_clusters, clusters, cluster_order, 1, fade_time);
+      uint8_t direction = active_states[EXTRA2] < 128 ? 1 : -1;
+      LED.moveClockwise(0, num_clusters, clusters, cluster_order, direction, fade_time);
       break; 
     }
 
@@ -225,7 +224,6 @@ void setmode(){
     }
 
     case 3: {
-      // use clusters of a pole of a full letter
       uint8_t clusters[] =      {2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 4, 5, 4, 6};
       uint8_t cluster_order[] = {4, 3, 2, 1, 0, 11, 10, 12, 13, 5, 6, 7, 8, 9};
       uint8_t num_clusters = sizeof(clusters)/sizeof(uint8_t);
@@ -235,13 +233,13 @@ void setmode(){
     }
 
     case 4: {
-      // use clusters of a pole of a full letter
       uint8_t num_angles = 3;
       float width_angle = 2.0f*PI/36.0f;
       uint8_t direction = active_states[EXTRA2] < 128 ? 1 : -1;
       float fadetime = mapValue(0, 255, 0, 5, active_states[EXTRA1]);
       LED.twoColorRotation(0, num_angles, width_angle, direction, fadetime);
-      break; }
+      break;
+    }
 
     }
 }
