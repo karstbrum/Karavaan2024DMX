@@ -25,6 +25,9 @@ class RGBW {
         // constructor
         RGBW(uint16_t LEDsPerPin_[], uint8_t LEDpins_[], uint8_t numPins_ = 1);
 
+        // reset the pixels
+        void resetPixels();
+
         // define the colors
         void addColor(uint8_t W, uint8_t R, uint8_t G, uint8_t B);
         void changeAddedColor(uint8_t W, uint8_t R, uint8_t G, uint8_t B, uint8_t colorIndex);

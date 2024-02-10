@@ -32,7 +32,7 @@ RGBW::RGBW(uint16_t LEDsPerPin_[], uint8_t LEDpins_[], uint8_t numPins_){
         // set ouput to low
         gpioSetup(STRANDS[k].gpioNum, OUTPUT, LOW);
         // pointer to strands
-        strands[k] = { &STRANDS[k] };
+        strands[k] = &STRANDS[k];
     }
     // add strands can use rc for troubleshooting
     int rc = digitalLeds_addStrands(strands, numPins);
@@ -48,9 +48,14 @@ RGBW::RGBW(uint16_t LEDsPerPin_[], uint8_t LEDpins_[], uint8_t numPins_){
     colors[0][2] = 0;
     colors[0][3] = 0;
 
-    RGBW::setColorsAll();
+    //RGBW::setColorsAll();
 
 };
+
+void RGBW::resetPixels(){
+    // reset the strands
+    digitalLeds_resetPixels(strands, numPins);
+}
 
 
 void RGBW::addColor(uint8_t W, uint8_t R, uint8_t G, uint8_t B) {
@@ -86,7 +91,7 @@ void RGBW::setColorsIndividualFixed(uint16_t k, uint8_t color, float extraDim) {
 }
 
 void RGBW::setColorsIndividual(uint16_t k, float white, float red, float green, float blue, float extraDimmer) {
-
+    
     RGBWStates[k][0] = static_cast<uint8_t>(dimmer * extraDimmer * white);
     RGBWStates[k][1] = static_cast<uint8_t>(dimmer * extraDimmer * red);
     RGBWStates[k][2] = static_cast<uint8_t>(dimmer * extraDimmer * green);
@@ -151,14 +156,15 @@ void RGBW::setStrip() {
     for (uint8_t k = 0; k < numPins; k++) {           // for each strip   
         for (uint16_t l = 0; l < LEDsPerPin[k]; l++) {      // For each pixel in strip.
             // set the colors individually for the LED library
-            strands[k]->pixels[pixelIndex].w = RGBWStates[pixelIndex][0];
-            strands[k]->pixels[pixelIndex].r = RGBWStates[pixelIndex][1];
-            strands[k]->pixels[pixelIndex].g = RGBWStates[pixelIndex][2];
-            strands[k]->pixels[pixelIndex].b = RGBWStates[pixelIndex][3];
+            strands[k]->pixels[l].w = RGBWStates[pixelIndex][0];
+            strands[k]->pixels[l].r = RGBWStates[pixelIndex][1];
+            strands[k]->pixels[l].g = RGBWStates[pixelIndex][2];
+            strands[k]->pixels[l].b = RGBWStates[pixelIndex][3];
             pixelIndex += 1;
-        };
-        
-    };
+            
+        }
+
+    }
 
     // set the colors of all strands
     digitalLeds_drawPixels(strands, numPins);

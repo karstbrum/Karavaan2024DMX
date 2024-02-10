@@ -21,7 +21,7 @@ const dmx_port_t dmx_num = DMX_NUM_2;
 // DMX start address
 const int dmx_start_addr = 0;
 // number of states for LED and discoball
-const int led_dmx_size = 32; // muliples of 8
+const int led_dmx_size = 80; // muliples of 8
 const int disco_dmx_size = led_dmx_size;
 // DMX size (number of addresses)
 const int dmx_size = led_dmx_size + disco_dmx_size;
@@ -234,8 +234,8 @@ void setmode(){
       // use clusters of a pole of a full letter
       uint8_t num_angles = 3;
       float width_angle = 2.0f*PI/36.0f;
-      uint8_t direction = 1;
-      float fadetime = 0.5;
+      uint8_t direction = active_states[EXTRA2] < 128 ? 1 : -1;
+      float fadetime = mapValue(0, 255, 0, 5, active_states[EXTRA1]);
       LED.twoColorRotation(0, num_angles, width_angle, direction, fadetime);
       break; }
 
@@ -250,11 +250,14 @@ void LightsTaskcode(void *pvParameters)
   // define LED positions
   LED.definePositions(start_pos_x, start_pos_y, end_pos_x, end_pos_y);
 
+  // reset for stability
+  LED.resetPixels();
+
   // TIME VARIABLES
   // Time spent in the main loop
   int loopTime = 0;
 
-  active_states[MODE] = 4;
+  // active_states[MODE] = 4;
 
   // another option to have a timed loop is to use vTaskDelayUntil(), have to look into it first
   for (;;)
@@ -279,7 +282,6 @@ void LightsTaskcode(void *pvParameters)
       LED.changeColor(active_states[WHITE], active_states[RED], active_states[GREEN], active_states[BLUE]);
 
       // set BPM
-      active_states[BPM] = 30;
       LED.setBPM(active_states[BPM]);
 
       // set mode

@@ -47,6 +47,10 @@ Pixels::Pixels(uint8_t numSides_, uint16_t pixelsPerSide_[], uint8_t numPins_, u
     srand(static_cast <unsigned> (time(0)));
 };
 
+void Pixels::resetPixels(){
+    strip->resetPixels();
+}
+
 void Pixels::definePositions(float x_start[], float y_start[], float x_end[], float y_end[]){
 
     // The first and last LED are defined on:
