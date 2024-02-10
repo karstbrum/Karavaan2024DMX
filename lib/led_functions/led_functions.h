@@ -60,6 +60,7 @@ class Pixels {
         // functions based on coordinates
         void oneColorRotation(uint8_t colorIndex, uint8_t num_angles, float width_angle, uint8_t direction, float fadetime = 0);
         void twoColorRotation(uint8_t colorIndex, uint8_t num_angles, float width_angle, uint8_t direction, float fadetime = 0);
+        void threeColorRotation(uint8_t colorIndex, uint8_t num_angles, float width_angle, uint8_t direction, float fadetime = 0);
         void movingCircles(uint8_t colorIndex, uint8_t num_circles, float circle_width, uint8_t direction, float fadetime = 0);
 
         // variables for counting up clusters
