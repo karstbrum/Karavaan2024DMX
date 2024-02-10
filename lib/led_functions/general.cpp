@@ -113,7 +113,7 @@ void Pixels::defineFirstColors() {
 };
 
 void Pixels::changeColor(uint8_t W, uint8_t R, uint8_t G, uint8_t B){
-    //Serial.printf("W: %i, R: %i, G: %i, B: %i\n", W, R, G, B);
+    Serial.printf("W: %i, R: %i, G: %i, B: %i\n", W, R, G, B);
     strip->changeAddedColor(W, R, G, B, 0);
     strip->changeAddedColor(W, B, R, G, 1);
     strip->changeAddedColor(W, G, B, R, 2);

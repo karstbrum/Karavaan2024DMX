@@ -57,12 +57,59 @@ uint8_t active_states[9];
 TaskHandle_t ControllerTask;
 TaskHandle_t LEDTask;
 
+// bottom post y start and end (bottom to top)
+float y_b1 = -0.2;
+float y_b2 = 0;
+
+// top post y start and end (bottom to top)
+float y_t1 = 0;
+float y_t2 = 0.2;
+
+// x positions start & diff
+float x_1 = 0.2;
+float x_d = (0.5-x_1)/4;
+
+// bottom letter (bottom to top)
+float yl_b1 = -0.3;
+float yl_b2 = -0.15;
+
+// top letter (bottom to top)
+float yl_t1 = -0.15;
+float yl_t2 = 0;
+// for the R
+float yl_t3 = (yl_t1/2) ;
+float yl_t4 = (yl_t1/2);
+
+// start position 0, only diff
+float xl_d = (0.5-x_1)/4;
+
+// define relative start and end position of the sides
+float start_pos_x[] = {-x_1, -x_1,  -x_1-1*x_d, -x_1-1*x_d, -x_1-2*x_d, -x_1-2*x_d, -x_1-3*x_d, -x_1-3*x_d, -x_1-4*x_d, -x_1-4*x_d,
+                        x_1,  x_1,   x_1+1*x_d,  x_1+1*x_d,  x_1+2*x_d,  x_1+2*x_d,  x_1+3*x_d,  x_1+3*x_d,  x_1+4*x_d,  x_1+4*x_d,
+                       -4*xl_d,         -4*xl_d,        -3*xl_d,        -4*xl_d, -2*xl_d, -2*xl_d, -2*xl_d,         -1*xl_d, -2*xl_d,
+                          xl_d,  5.0f/4.0f*xl_d, 6.0f/4.0f*xl_d, 7.0f/4.0f*xl_d,  3*xl_d,  3*xl_d,  3*xl_d,  7.0f/2.0f*xl_d,  4*xl_d, 4*xl_d};
+float start_pos_y[] = {y_b1, y_t1, y_b1, y_t1, y_b1, y_t1, y_b1, y_t1, y_b1, y_t1,
+                       y_b1, y_t1, y_b1, y_t1, y_b1, y_t1, y_b1, y_t1, y_b1, y_t1,
+                       yl_b1, yl_t1, yl_t2, yl_b2, yl_b1, yl_t1, yl_t2, yl_t4, yl_b2,
+                       yl_t2, yl_b2, yl_b1, yl_t1, yl_b1, yl_t1, yl_t2, yl_b2, yl_b1, yl_t1};
+float end_pos_x[] = {-x_1, -x_1,  -x_1-1*x_d, -x_1-1*x_d, -x_1-2*x_d, -x_1-2*x_d, -x_1-3*x_d, -x_1-3*x_d, -x_1-4*x_d, -x_1-4*x_d,
+                      x_1,  x_1,   x_1+1*x_d,  x_1+1*x_d,  x_1+2*x_d,  x_1+2*x_d,  x_1+3*x_d,  x_1+3*x_d,  x_1+4*x_d,  x_1+4*x_d,
+                             -4*xl_d,         -4*xl_d,        -4*xl_d,  -3*xl_d, -2*xl_d, -2*xl_d,        -1*xl_d, -2*xl_d, -1*xl_d,
+                      5.0f/4.0f*xl_d,  6.0f/4.0f*xl_d, 7.0f/4.0f*xl_d,   2*xl_d,  3*xl_d,  3*xl_d, 7.0f/2.0f*xl_d,  4*xl_d,  4*xl_d, 4*xl_d};
+float end_pos_y[] = {y_b2, y_t2, y_b2, y_t2, y_b2, y_t2, y_b2, y_t2, y_b2, y_t2,
+                     y_b2, y_t2, y_b2, y_t2, y_b2, y_t2, y_b2, y_t2, y_b2, y_t2,
+                     yl_b2, yl_t2, yl_t1, yl_b1, yl_b2, yl_t2, yl_t1, yl_t3, yl_b1,
+                     yl_t1, yl_b1, yl_b2, yl_t2, yl_b2, yl_t2, yl_t1, yl_b1, yl_b2, yl_t2};
+
 // define number of leds per side
-uint16_t LEDsPerSide[] = {18, 18, 18, 18, 18, 18, 18, 18, 18, 18, 18, 18, 18, 18};
+uint16_t LEDsPerSide[] = {18, 18, 18, 18, 18, 18, 18, 18, 18, 18,
+                          18, 18, 18, 18, 18, 18, 18, 18, 18, 18,
+                          12, 13, 17, 17, 12, 12, 13, 13, 17,
+                          12, 13, 13, 12, 12, 13, 13, 13, 13, 12};
 // get number of sides
 uint8_t numSides = sizeof(LEDsPerSide) / sizeof(uint16_t);
-uint8_t sidesPerPin[] = {14};
-uint8_t LEDPins[] = {26};
+uint8_t sidesPerPin[] = {10, 10, 9, 10};
+uint8_t LEDPins[] = {25, 26, 32, 33};
 uint8_t numPins = sizeof(LEDPins);
 Pixels LED(numSides, LEDsPerSide, numPins, sidesPerPin, LEDPins, Ts);
 
@@ -148,7 +195,7 @@ void setmode(){
   switch (active_states[MODE])
     {
     case 0: {
-      uint8_t clusters[] = {2, 2, 2, 2, 2, 2, 2};
+      uint8_t clusters[] = {2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 4, 5, 4, 6};
       uint8_t num_clusters = sizeof(clusters)/sizeof(uint8_t);
       float fade_time = 0.05;
       float on_time = 1-mapValue(0, 255, 0, 1, active_states[EXTRA1]);
@@ -158,12 +205,12 @@ void setmode(){
     }
 
     case 1: {
-      uint8_t clusters[] =      {2, 2, 2, 2, 2, 2, 2};
-      uint8_t cluster_order[] = {0, 1, 2, 3, 4, 5, 6};
+      uint8_t clusters[] =      {2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 4, 5, 4, 6};
+      uint8_t cluster_order[] = {4, 3, 2, 1, 0, 11, 10, 12, 13, 5, 6, 7, 8, 9};
       uint8_t num_clusters = sizeof(clusters)/sizeof(uint8_t);
-      float fade_time = mapValue(0, 255, 0, 4, active_states[EXTRA1]);
+      float fade_time = mapValue(0, 255, 0, 5, active_states[EXTRA1]);
       uint8_t direction = active_states[EXTRA2] < 128 ? 1 : -1;
-      LED.moveClockwise(num_clusters, clusters, cluster_order, direction, fade_time);
+      LED.moveClockwise(0, num_clusters, clusters, cluster_order, direction, fade_time);
       break; 
     }
 
@@ -177,13 +224,23 @@ void setmode(){
     }
 
     case 3: {
-      uint8_t clusters[] =      {2, 2, 2, 2, 2, 2, 2};
-      uint8_t cluster_order[] = {0, 1, 2, 3, 4, 5, 6};
+      uint8_t clusters[] =      {2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 4, 5, 4, 6};
+      uint8_t cluster_order[] = {4, 3, 2, 1, 0, 11, 10, 12, 13, 5, 6, 7, 8, 9};
       uint8_t num_clusters = sizeof(clusters)/sizeof(uint8_t);
-      float fade_time = mapValue(0, 255, 0, 4, active_states[EXTRA1]);
-      LED.blockParty(num_clusters, clusters, cluster_order, fade_time);
+      float fadetime = 1;
+      LED.blockParty(num_clusters, clusters, cluster_order, fadetime);
       break; 
     }
+
+    case 4: {
+      uint8_t num_angles = 3;
+      float width_angle = 2.0f*PI/36.0f;
+      uint8_t direction = active_states[EXTRA2] < 128 ? 1 : -1;
+      float fadetime = mapValue(0, 255, 0, 5, active_states[EXTRA1]);
+      LED.twoColorRotation(0, num_angles, width_angle, direction, fadetime);
+      break;
+    }
+
     }
 }
 
@@ -191,6 +248,10 @@ void setmode(){
 // Task for handling the LEDs on core 1
 void LightsTaskcode(void *pvParameters)
 {
+
+  // define LED positions
+  LED.definePositions(start_pos_x, start_pos_y, end_pos_x, end_pos_y);
+
   // reset for stability
   LED.resetPixels();
 

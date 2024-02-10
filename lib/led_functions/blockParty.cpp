@@ -12,8 +12,9 @@
 #include <algorithm>
 #include <unordered_map>
 
-// a show of blocks of 2 colors
+// clusters turn on in a clockwise direction
 void Pixels::blockParty(uint8_t numClusters, uint8_t clusters[], uint8_t cluster_order[], float fadetime) {
+    // define clusters
 
     uint8_t pixelsPerCluster[MAXSIDES_L];
     uint8_t sideIndex = 0;
@@ -25,41 +26,37 @@ void Pixels::blockParty(uint8_t numClusters, uint8_t clusters[], uint8_t cluster
         }
     }
 
-    pulseIndex += (Ts / 1000) * (BPM / 60) / 4;
 
-    // set all strips to off before making pattern
-    strip->setColorsAll(0, 0);
-
-    uint8_t percentage = 10;
-    uint8_t blocks = std::ceil(100/ percentage);
-    uint16_t pixelStart = 0;
-    uint16_t pixelEnd = ceil(pixelsPerCluster[0] * percentage);
-
-    // every pulseIndex it should switch the starting color to differentiate every 4 beats
-    uint8_t sequence = 0;
-    setAlpha(fadetime);
+    pulseIndex += ((Ts / 1000) * (BPM / 60) / freqdiv) * 2;
 
     if (pulseIndex > 1) {
         pulseIndex -= 1;
-
-        for (uint8_t i_cluster = 0; i_cluster < numClusters; i_cluster++) {
-            uint16_t pixelsPerBlock = ceil(pixelsPerCluster[i_cluster] * percentage);
-            for (uint8_t block = 0; block < blocks; block++) {
-                if (block % 2 == i_cluster % 2) {
-                    // even blocks versus even clusters, should switch the order of 2 colors per cluster
-                    // color index 0
-                    setDimmedRange(pixelStart, pixelEnd, sequence % 2, 1);
-                } else {
-                    // color index 1
-                    setDimmedRange(pixelStart, pixelEnd, sequence + 1 % 2, 1);
-                }
-                pixelStart += pixelEnd + 1;
-                pixelEnd = pixelStart + pixelsPerBlock -1;
-            }
-        }
-        sequence += 1;
+        clusterIndex < numClusters - 1 ? clusterIndex += 1 : clusterIndex = 0;
     }
 
+    // turn on lights per cluster
+    // define the first cluster
+    uint16_t pixelStart = 0;
+    uint16_t pixelEnd = pixelsPerCluster[0] -1;
+    uint8_t colorIndex = clusterIndex % 2;
 
+    setAlpha(fadetime);
+
+    for (uint8_t i_cluster = 0; i_cluster < numClusters; i_cluster++) {
+        if (clusterIndex == cluster_order[i_cluster]) {
+            setDimmedRange(pixelStart, pixelEnd, 0, 1);
+
+        } else {
+            setDimmedRange(pixelStart, pixelEnd, 0, 0);
+
+        }
+
+        // count to next number of pixels
+        if (i_cluster < numClusters-1){
+            pixelStart += pixelsPerCluster[i_cluster];
+            pixelEnd = pixelStart + pixelsPerCluster[i_cluster+1] -1;
+        }
+
+    }
 
 }
