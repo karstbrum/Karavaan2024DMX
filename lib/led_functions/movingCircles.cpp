@@ -65,81 +65,8 @@ void Pixels::movingCircles(uint8_t colorIndex, uint8_t num_circles, float circle
 
     }
 
-    // // make a full array with alternating angle_start and angle_end, incrementing i_angle
-    // // make a vector of all angles, corresponding 
-    // for (uint8_t i_angle = 0; i_angle<num_angles*2; i_angle++){
-        
-    //     // fill all angles 
-    //     all_angles[i_angle*2] = angle_start[i_angle];
-    //     all_angles[i_angle*2+1] = angle_end[i_angle];
-
-    //     // also make extra vector to later find the sort index
-    //     all_angles_aux[i_angle*2] = angle_start[i_angle];
-    //     all_angles_aux[i_angle*2+1] = angle_end[i_angle];
-
-    //     // select color based on even numbers with index/2
-    //     // also direcly set dimmer values, based on direction
-    //     if (i_angle % 2 == 0){
-    //         if (direction == 1){
-    //             angle_colors_aux[i_angle*2] = 1;
-    //             angle_colors_aux[i_angle*2+1] = 1;
-    //         } else {
-    //             angle_colors_aux[i_angle*2] = 0;
-    //             angle_colors_aux[i_angle*2+1] = 1;
-    //         }
-    //     } else {
-    //         if (direction == 1){
-    //             angle_colors_aux[i_angle*2] = 0;
-    //             angle_colors_aux[i_angle*2+1] = 0;
-    //         } else {
-    //             angle_colors_aux[i_angle*2] = 1;
-    //             angle_colors_aux[i_angle*2+1] = 0;
-    //         }
-    //     }
-
-    //     // fill dimmer values, independent of direction
-    //     angle_dimmers_aux[i_angle*2] = 0;
-    //     angle_dimmers_aux[i_angle*2+1] = 1;
-        
-    // }
-
-    // // add 2*pi in the last enrty of all_angles
-    // all_angles[num_angles*4] = 2.0f*PI;
-
-    // // sort the array
-    // int n = sizeof(all_angles) / sizeof(all_angles[0]);
-    // std::sort(all_angles, all_angles + n);
-
-    // // define start index
-    // uint8_t i_start;
-
-    // // find the start index of the sorting
-    // for(int i_angle = 0; i_angle < num_angles*4; i_angle++){
-        
-    //     if (all_angles[0] == all_angles_aux[i_angle]){
-    //         i_start = i_angle;
-    //         break;
-    //     }
-        
-    // }
-
-    // // shift all arrays by the same ammount
-    // for(int i_angle = 0; i_angle < num_angles*4; i_angle++){
-        
-    //     uint8_t i_old = i_angle + i_start;
-    //     i_old = i_old < num_angles*4 ? i_old : i_old - num_angles*4;
-
-    //     angle_colors[i_angle] = angle_colors_aux[i_old];
-    //     angle_dimmers[i_angle] = angle_dimmers_aux[i_old];
-        
-    // }
-    
-    // // copy starting values to end, but 2*pi to angles
-    // angle_colors[num_angles*4] = angle_colors[0];
-    // angle_dimmers[num_angles*4] = angle_dimmers[0];
-
-    // // set the fading parameters correct
-    // Pixels::setAlpha(fadetime);
+    // set the fading parameters correct
+    Pixels::setAlpha(fadetime);
 
     // // loop through all pixels 
     // for (uint16_t i_pixel = 0; i_pixel < totalPixels; i_pixel++) {
@@ -149,15 +76,15 @@ void Pixels::movingCircles(uint8_t colorIndex, uint8_t num_circles, float circle
     //     // if withing even numbers, give colorindex 0
     //     // if within odd numbers, give coloerindex 1
 
-    //     for (uint8_t i_all = 0; i_all <= num_angles*4; i_all++){
+    //     for (uint8_t i_all = 0; i_all <= num_circles; i_all++){
 
-    //         if (pixel_pos[APOS][i_pixel] < all_angles[i_all]) {
+    //         if (pixel_pos[LPOS][i_pixel] > circle_start[i_all] && pixel_pos[LPOS][i_pixel] < circle_end[i_all]) {
 
     //             // give corresponding dimmer value and color
     //             setDimmedRange(i_pixel, i_pixel, angle_colors[i_all], angle_dimmers[i_all]);
 
     //             break;
-    //         }
+    //         } else if 
             
     //     }
     
