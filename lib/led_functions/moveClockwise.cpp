@@ -51,8 +51,8 @@ void Pixels::moveClockwise(uint8_t numClusters, uint8_t clusters[], uint8_t clus
     setAlpha(fadetime);
 
     for (uint8_t i_cluster = 0; i_cluster < numClusters; i_cluster++) {
-        float onOrOff = clusterIndex == cluster_order[i_cluster] ? 1 : 0;
-            setDimmedRange(pixelStart, pixelEnd, 0, onOrOff);
+        float onOrOff = i_cluster == cluster_order[clusterIndex] ? 1 : 0;
+        setDimmedRange(pixelStart, pixelEnd, 0, onOrOff);
 
         // count to next number of pixels
         if (i_cluster < numClusters-1){

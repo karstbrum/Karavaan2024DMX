@@ -8,10 +8,10 @@
 #include<esp_now.h>
 
 // Sampling time (Ts)
-#define Ts 14
+#define Ts 15
 
 // discoball states 
-const uint8_t disco_dmx_size = 32;
+const uint8_t disco_dmx_size = 80;
 uint8_t discostates[disco_dmx_size];
 
 // define active states (are used by the lights)
