@@ -62,8 +62,7 @@ class Pixels {
         void twoColorRotation(uint8_t num_angles, float width_angle, int direction, float fadetime = 0);
         void threeColorRotation(uint8_t num_angles, float width_angle, int direction, float fadetime = 0);
         void movingCircles(uint8_t num_circles, float circle_width, int direction, float fadetime = 0, float clip_radius = 1);
-
-        // variables for counting up clusters
+        void movingBlock(float block_size, float fadetime = 0, float move_width = 1);
         int clusterIndex = 0;
 
         // frequency divider
@@ -109,6 +108,11 @@ class Pixels {
         // number of clusters to turn on - used for strobo.cpp
         uint8_t number_on = 0;
         uint8_t clusterindices[MAXSIDES_L] = {};
+
+        // start and end position and direction of block, used for movingBlock.cpp
+        float yb_start = 0;
+        float yb_end = 0;
+        int move_direction = 1;
 
         // RGBW class (self made)
         RGBW* strip;

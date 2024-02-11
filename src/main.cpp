@@ -298,9 +298,17 @@ void setmode(){
       float circle_width = 0.08;
       float clip_radius = 1;
       float fadetime = mapValue(0, 255, 0, 5, active_states[DIMMER]);
-      uint8_t num_circles = static_cast<uint8_t>(round(mapValue(0, 255, 1, 4, active_states[EXTRA1])));
+      uint8_t num_circles = static_cast<uint8_t>(round(mapValue(0, 255, 1, 3, active_states[EXTRA1])));
       int direction = active_states[EXTRA2] < 128 ? 1 : -1;
       LED.movingCircles(num_circles, circle_width, direction, fadetime, clip_radius);
+      break;
+    }
+
+    case 5: {
+      float fadetime = mapValue(0, 255, 0, 5, active_states[DIMMER]);
+      float block_size = mapValue(0, 255, 0.1, 0.3, active_states[EXTRA1]);
+      float move_width = mapValue(0, 255, 0.4, 4, active_states[EXTRA1]);
+      LED.movingBlock(block_size, fadetime, move_width);
       break;
     }
 
@@ -322,7 +330,7 @@ void LightsTaskcode(void *pvParameters)
   // Time spent in the main loop
   int loopTime = 0;
 
-  // active_states[MODE] = 4;
+  // active_states[MODE] = 5;
 
   // another option to have a timed loop is to use vTaskDelayUntil(), have to look into it first
   for (;;)
