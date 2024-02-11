@@ -24,7 +24,8 @@ class Pixels {
         Pixels(uint8_t numSides_, uint16_t pixelsPerSide_[], uint8_t numPins_, uint8_t sidesPerPin_[], uint8_t LEDPin_[], float Ts_);
 
         // function for defining the positoins of individual LEDs
-        void definePositions(float x_start[], float y_start[], float x_end[], float y_end[]);
+        void definePositions_carthesian(float x_start[], float y_start[], float x_end[], float y_end[]);
+        void definePositions_polar(float a_start[], float a_end[], float l[]);
 
         // display current color
         void activateColor();
@@ -63,6 +64,9 @@ class Pixels {
         void threeColorRotation(uint8_t num_angles, float width_angle, int direction, float fadetime = 0);
         void movingCircles(uint8_t num_circles, float circle_width, int direction, float fadetime = 0, float clip_radius = 1);
         void movingBlock(float block_size, float fadetime, float move_width, float y_range[]);
+        void updownPositionBased(float updown_time, float fadetime, float phase, float line_width, float y_range[]);
+
+
         int clusterIndex = 0;
 
         // frequency divider

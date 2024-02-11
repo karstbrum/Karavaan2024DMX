@@ -192,7 +192,7 @@ void setmode(){
       bool clusters1[] = {1, 1, 1, 1, 0, 0, 0, 0};
       bool clusters2[] = {0, 0, 0, 0, 1, 1, 1, 1};
       float fadetime = mapValue(0, 255, 0, 5, active_states[EXTRA1]); 
-      float on_time = mapValue(0, 255, 0.02, 0.8, active_states[EXTRA2]);
+      float on_time = mapValue(0, 255, 0.05, 0.8, active_states[EXTRA2]);
       LED.alternateClusters(clusters1, clusters2, fadetime, on_time);
       break; }
 

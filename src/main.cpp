@@ -307,9 +307,33 @@ void setmode(){
     case 5: {
       float fadetime = mapValue(0, 255, 0, 5, active_states[DIMMER]);
       float block_size = mapValue(0, 255, 0.1, 0.3, active_states[EXTRA1]);
-      float move_width = mapValue(0, 255, 0.4, 4, active_states[EXTRA1]);
+      float move_width = mapValue(0, 255, 0.4, 4, active_states[EXTRA2]);
       float y_range[] = {-0.3, 0.3};
       LED.movingBlock(block_size, fadetime, move_width, y_range);
+      break;
+    }
+
+    case 6: {
+      // use clusters of a pole of a full letter
+      bool clusters1[] = {1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 
+                          1, 0, 0, 1, 1, 0, 0, 0, 1, 0, 1, 1, 0, 1, 0, 0, 1, 1, 0};
+      bool clusters2[] = {0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1,
+                          0, 1, 1, 0, 0, 1, 1, 1, 0, 1, 0, 0, 1, 0, 1, 1, 0, 0, 1};
+      float fadetime = mapValue(0, 255, 0, 5, active_states[DIMMER]); 
+      float on_time = mapValue(0, 255, 0.2, 0.8, active_states[EXTRA1]);
+      LED.alternateClusters(clusters1, clusters2, fadetime, on_time);
+      break;
+    }
+
+    case 7: {
+      // use clusters of a pole of a full letter
+      float linewidth = 0.05;
+      float fadetime = mapValue(0, 255, 0, 5, active_states[DIMMER]); 
+      float updown_time = mapValue(0, 255, 0.4, 1, active_states[EXTRA1]);
+      float phase = mapValue(0, 255, -1, 1, active_states[EXTRA2]);
+      float line_width = 0.05;
+      float y_range[] = {yl_b1, y_t2};
+      LED.updownPositionBased(updown_time, fadetime, phase, line_width, y_range);
       break;
     }
 
@@ -322,7 +346,7 @@ void LightsTaskcode(void *pvParameters)
 {
 
   // define LED positions
-  LED.definePositions(start_pos_x, start_pos_y, end_pos_x, end_pos_y);
+  LED.definePositions_carthesian(start_pos_x, start_pos_y, end_pos_x, end_pos_y);
 
   // reset for stability
   LED.resetPixels();
@@ -331,7 +355,7 @@ void LightsTaskcode(void *pvParameters)
   // Time spent in the main loop
   int loopTime = 0;
 
-  // active_states[MODE] = 5;
+  // active_states[MODE] = 7;
 
   // another option to have a timed loop is to use vTaskDelayUntil(), have to look into it first
   for (;;)
