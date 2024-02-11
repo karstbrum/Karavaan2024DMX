@@ -308,7 +308,8 @@ void setmode(){
       float fadetime = mapValue(0, 255, 0, 5, active_states[DIMMER]);
       float block_size = mapValue(0, 255, 0.1, 0.3, active_states[EXTRA1]);
       float move_width = mapValue(0, 255, 0.4, 4, active_states[EXTRA1]);
-      LED.movingBlock(block_size, fadetime, move_width);
+      float y_range[] = {-0.3, 0.3};
+      LED.movingBlock(block_size, fadetime, move_width, y_range);
       break;
     }
 

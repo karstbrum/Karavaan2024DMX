@@ -12,7 +12,7 @@
 #include <algorithm>
 
 // One of more traveling LEDs/pixels over the whole range, or per cluster
-void Pixels::movingBlock(float block_size, float fadetime, float move_width) {
+void Pixels::movingBlock(float block_size, float fadetime, float move_width, float y_range[]) {
 
     // direction: clockwise of anti clockwise (1 or -1)
     // fadetime: can be any positive number which determines the time the LEDs dim to 5% of the original value
@@ -33,10 +33,10 @@ void Pixels::movingBlock(float block_size, float fadetime, float move_width) {
         // define a start and end position
         // get a random number between 0 and 100 and map it to [-0.4 0.4]
         uint8_t randnum = rand() % 100;
-        yb_start = mapValue(0, 99, -0.4, 0.4, randnum);
+        yb_start = mapValue(0, 99, y_range[0], y_range[1], randnum);
         // define a new random number for y_end
         randnum = rand() % 100;
-        yb_end = mapValue(0, 99, -0.4, 0.4, randnum);
+        yb_end = mapValue(0, 99, y_range[0], y_range[1], randnum);
         
         // select random move direction
         move_direction = (rand() % 2)*2 - 1;

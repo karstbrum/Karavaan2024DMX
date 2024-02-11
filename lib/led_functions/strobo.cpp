@@ -43,8 +43,8 @@ void Pixels::strobo(uint8_t colorIndex, uint8_t numClusters_, uint8_t clusters_[
     number_on = number_on > 1 ? number_on : 1;
     number_on = number_on < numClusters ? number_on : numClusters;
 
-    // count to 1 every BPM / freqdiv
-    pulseIndex += (Ts_ / 1000) * (BPM / 60) / freqdiv; // Ts*BPS (s^1 * s^-1)
+    // count to 1 every 0.5 BPM / freqdiv
+    pulseIndex += 2 * (Ts_ / 1000) * (BPM / 60) / freqdiv; // Ts*BPS (s^1 * s^-1)
 
     // if pulseindex exceeds 1, select the cluster to light up
     if (pulseIndex >= 1) {

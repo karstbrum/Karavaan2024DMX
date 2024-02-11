@@ -62,7 +62,7 @@ class Pixels {
         void twoColorRotation(uint8_t num_angles, float width_angle, int direction, float fadetime = 0);
         void threeColorRotation(uint8_t num_angles, float width_angle, int direction, float fadetime = 0);
         void movingCircles(uint8_t num_circles, float circle_width, int direction, float fadetime = 0, float clip_radius = 1);
-        void movingBlock(float block_size, float fadetime = 0, float move_width = 1);
+        void movingBlock(float block_size, float fadetime, float move_width, float y_range[]);
         int clusterIndex = 0;
 
         // frequency divider
