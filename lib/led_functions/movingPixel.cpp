@@ -67,6 +67,7 @@ void Pixels::movingPixel(uint8_t colorIndex, uint8_t numClusters_, uint8_t clust
     uint16_t pixelStart = 0;
     uint16_t pixelEnd = pixelsPerCluster[0] - 1;
 
+    // configure the dim system
     Pixels::setAlpha(fadetime);
 
     // loop through all clusters to set the moving LEDs per cluster
