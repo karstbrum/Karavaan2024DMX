@@ -152,7 +152,7 @@ void Pixels::setAlpha(float dim_time){
     // number of samples to to go to the values
     float num_samples = dim_time/Ts*1000 - 1;
     // get the alpha value, only calculate when num_samples > 0
-    alpha_disc = (num_samples > 0) ? std::pow(0.01, 1/num_samples) : 0;
+    alpha_disc = (num_samples > 0) ? std::pow(0.001, 1/num_samples) : 0;
 
 }
 

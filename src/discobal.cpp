@@ -20,7 +20,7 @@ const uint8_t DIM = 1;
 const uint8_t RED = 2;
 const uint8_t GREEN = 3;
 const uint8_t BLUE = 4;
-const uint8_t WHITE = 5;
+const uint8_t DIMMER = 5;
 const uint8_t EXTRA1 = 6;
 const uint8_t EXTRA2 = 7;
 const uint8_t MODE = 8;
@@ -119,6 +119,40 @@ void set_constraint()
   active_states[BPM] = active_states[BPM] > 1 ? active_states[BPM] : 1;
 }
 
+void setColor(){
+
+  uint8_t red = active_states[RED];
+  uint8_t green = active_states[GREEN];
+  uint8_t blue = active_states[BLUE];
+  uint8_t white = 0;
+
+  // if red green and blue are almost equal, select white
+  if (abs(red - green) + abs(green - blue) < 10){
+    white = 255;
+    red = 0;
+    green = 0;
+    blue = 0;
+  } 
+
+  // else normalize red green and blue to 255
+  else {
+    uint8_t max_color = red;
+    max_color = green > max_color ? green : max_color;
+    max_color = blue > max_color ? blue : max_color;
+    
+    // define normalization factor
+    // divide all colors by max color and multiply by 255
+    float max_color_f = static_cast<float>(max_color);
+    red = static_cast<uint8_t>(red/max_color*255.0f);
+    green = static_cast<uint8_t>(green/max_color*255.0f);
+    blue = static_cast<uint8_t>(blue/max_color*255.0f);
+
+  }
+
+  LED.changeColor(white, red, green, blue);
+
+}
+
 void setmode(){
   switch (active_states[MODE])
     {
@@ -126,10 +160,11 @@ void setmode(){
       // use clusters of a pole of a full letter
       uint8_t clusters[] = {1, 1, 1, 1, 1, 1, 1, 1};
       uint8_t num_clusters = sizeof(clusters)/sizeof(uint8_t);
-      float fadetime = 0.05;
-      float on_time = 1-mapValue(0, 255, 0, 1, active_states[EXTRA1]); 
+      float ramp_time = 0.02;
+      float fade_time = mapValue(0, 255, 0, 4, active_states[DIMMER]);
+      float on_time = 1-mapValue(0, 255, 0, 1, active_states[EXTRA1]);
       float on_chance = 1-mapValue(0, 255, 0, 1, active_states[EXTRA2]);
-      LED.strobo(0, num_clusters, clusters, fadetime, on_time, on_chance);
+      LED.strobo(0, num_clusters, clusters, ramp_time, on_time, on_chance, fade_time);
       break; }
 
     case 1: {// 
@@ -177,7 +212,11 @@ void setmotor(){
 // Task for handling the LEDs on core 1
 void LightsTaskcode( void * pvParameters ){
 
+  // set pinmode of discoball motor to output
   pinMode(motor_pin, OUTPUT);
+
+  // reset for stability (not really needed)
+  LED.resetPixels();
 
   // another option to have a timed loop is to use vTaskDelayUntil(), have to look into it first
   for(;;){
@@ -195,7 +234,7 @@ void LightsTaskcode( void * pvParameters ){
       LED.setDimmer((static_cast<float>(active_states[DIM]))/255);
 
       // set color
-      LED.changeColor(active_states[WHITE], active_states[RED], active_states[GREEN], active_states[BLUE]);
+      setColor();
 
       // set BPM
       LED.setBPM(active_states[BPM]);
