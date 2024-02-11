@@ -30,6 +30,20 @@ uint8_t active_states[9];
 TaskHandle_t LEDTask;
 TaskHandle_t ControllerTask;
 
+
+// define start angle of first and second strip
+float a1 = PI/12 * 1;
+float a2 = PI + a1;
+
+// define angle difference between clusters
+float da = PI/12 * 2.5;
+
+// define relative start and end angles
+// the diameter is normalized to 1
+float start_a[] = {   a1,   a1+da, a1+2*da, a1+3*da,    a2,   a2+da, a2+2*da, a2+3*da};
+float end_a[] =   {a1+da, a1+2*da, a1+3*da, a1+4*da, a2+da, a2+2*da, a2+3*da, a2+4*da};
+float l_sides[] = { 0.5f,    0.5f,    0.5f,    0.5f,  0.5f,    0.5f,    0.5f,    0.5f};
+
 // 288 lights divided in 8 segments
 uint16_t LEDsPerSide[] = {36, 36, 36, 36, 36, 36, 36, 36}; 
 uint8_t numSides = sizeof(LEDsPerSide)/sizeof(uint16_t);
@@ -215,7 +229,10 @@ void LightsTaskcode( void * pvParameters ){
   // set pinmode of discoball motor to output
   pinMode(motor_pin, OUTPUT);
 
-  // reset for stability (not really needed)
+  // define LED positions
+  LED.definePositions_polar(start_a, end_a, l_sides);
+
+  // reset for stability
   LED.resetPixels();
 
   // another option to have a timed loop is to use vTaskDelayUntil(), have to look into it first
