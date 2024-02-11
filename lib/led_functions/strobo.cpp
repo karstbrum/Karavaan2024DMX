@@ -98,9 +98,9 @@ void Pixels::strobo(uint8_t colorIndex, uint8_t numClusters_, uint8_t clusters_[
         }
 
         if(cluster_on){
-            Pixels::setDimmedRange(pixelStart, pixelStart, 0, dimValue);   
+            Pixels::setDimmedRange(pixelStart, pixelEnd, 0, dimValue);   
         } else {
-            Pixels::setDimmedRange(pixelStart, pixelStart, 0, 0); 
+            Pixels::setDimmedRange(pixelStart, pixelEnd, 0, 0); 
         }
 
         // define start and end pixel of the cluster
