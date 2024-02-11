@@ -57,12 +57,12 @@ TaskHandle_t ControllerTask;
 TaskHandle_t LEDTask;
 
 // bottom post y start and end (bottom to top)
-float y_b1 = -0.2;
-float y_b2 = 0;
+float y_b1 = -0.17;
+float y_b2 = 0.05;
 
 // top post y start and end (bottom to top)
-float y_t1 = 0;
-float y_t2 = 0.2;
+float y_t1 = y_b2;
+float y_t2 = 0.27;
 
 // x positions start & diff
 float x_1 = 0.2;
@@ -82,7 +82,7 @@ float yl_t3 = (yl_t1/2);
 // letter width
 float xl_d1 = x_d;
 // distance from letter to letter
-float xl_d2 = xl_d1/3;
+float xl_d2 = xl_d1/4;
 
 // define letter x positions, otherwise to messy
 // defined from left to right
@@ -210,10 +210,10 @@ void set_constraint()
 
 void setColor(){
 
-  uint8_t red = active_states[RED];
-  uint8_t green = active_states[GREEN];
-  uint8_t blue = active_states[BLUE];
-  uint8_t white = 0;
+  float red = static_cast<float>(active_states[RED]);
+  float green = static_cast<float>(active_states[GREEN]);
+  float blue = static_cast<float>(active_states[BLUE]);
+  float white = 0;
 
   // if red green and blue are almost equal, select white
   if (abs(red - green) + abs(green - blue) < 10){
@@ -225,20 +225,25 @@ void setColor(){
 
   // else normalize red green and blue to 255
   else {
-    uint8_t max_color = red;
+    float max_color = red;
     max_color = green > max_color ? green : max_color;
     max_color = blue > max_color ? blue : max_color;
     
     // define normalization factor
     // divide all colors by max color and multiply by 255
-    float max_color_f = static_cast<float>(max_color);
-    red = static_cast<uint8_t>(red/max_color*255.0f);
-    green = static_cast<uint8_t>(green/max_color*255.0f);
-    blue = static_cast<uint8_t>(blue/max_color*255.0f);
+    float max_color_f = max_color;
+    red = red/max_color*255.0f;
+    green = green/max_color*255.0f;
+    blue = blue/max_color*255.0f;
 
   }
 
-  LED.changeColor(white, red, green, blue);
+  uint8_t white_i = static_cast<uint8_t>(white);
+  uint8_t red_i = static_cast<uint8_t>(red);
+  uint8_t green_i = static_cast<uint8_t>(green);
+  uint8_t blue_i = static_cast<uint8_t>(blue);
+
+  LED.changeColor(white_i, red_i, green_i, blue_i);
 
 }
 
@@ -249,7 +254,7 @@ void setmode(){
       uint8_t clusters[] = {2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 4, 5, 4, 6};
       uint8_t num_clusters = sizeof(clusters)/sizeof(uint8_t);
       float ramp_time = 0.02;
-      float fade_time = mapValue(0, 255, 0, 4, active_states[DIMMER]);
+      float fade_time = mapValue(0, 255, 0, 5, active_states[DIMMER]);
       float on_time = 1-mapValue(0, 255, 0, 1, active_states[EXTRA1]);
       float on_chance = 1-mapValue(0, 255, 0, 1, active_states[EXTRA2]);
       LED.strobo(0, num_clusters, clusters, ramp_time, on_time, on_chance, fade_time);
@@ -261,7 +266,7 @@ void setmode(){
       uint8_t cluster_order[] = {4, 3, 2, 1, 0, 10, 11, 12, 13, 5, 6, 7, 8, 9};
       uint8_t num_clusters = sizeof(clusters)/sizeof(uint8_t);
       float fade_time = mapValue(0, 255, 0, 5, active_states[DIMMER]);
-      uint8_t direction = active_states[EXTRA1] < 128 ? 1 : -1;
+      int direction = active_states[EXTRA1] < 128 ? 1 : -1;
       LED.moveClockwise(num_clusters, clusters, cluster_order, direction, fade_time);
       break; 
     }
@@ -276,11 +281,26 @@ void setmode(){
     }
 
     case 3: {
-      uint8_t num_angles = 2;
       float width_angle = 2.0f*PI/36.0f;
-      uint8_t direction = active_states[EXTRA2] < 128 ? 1 : -1;
-      float fadetime = mapValue(0, 255, 0, 5, active_states[EXTRA1]);
-      LED.twoColorRotation(0, num_angles, width_angle, direction, fadetime);
+      int direction = active_states[EXTRA2] < 128 ? 1 : -1;
+      float fadetime = mapValue(0, 255, 0, 5, active_states[DIMMER]);
+      if (active_states[EXTRA1] < 85){
+        LED.oneColorRotation(1, width_angle, direction, fadetime);
+      } else if (active_states[EXTRA1] >= 85 && active_states[EXTRA1] < 171) {
+        LED.oneColorRotation(2, width_angle, direction, fadetime);
+      } else {
+        LED.twoColorRotation(1, width_angle, direction, fadetime);
+      }
+      break;
+    }
+
+    case 4: {
+      float circle_width = 0.08;
+      float clip_radius = 1;
+      float fadetime = mapValue(0, 255, 0, 5, active_states[DIMMER]);
+      uint8_t num_circles = static_cast<uint8_t>(round(mapValue(0, 255, 1, 4, active_states[EXTRA1])));
+      int direction = active_states[EXTRA2] < 128 ? 1 : -1;
+      LED.movingCircles(num_circles, circle_width, direction, fadetime, clip_radius);
       break;
     }
 

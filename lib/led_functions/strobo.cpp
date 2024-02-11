@@ -79,9 +79,6 @@ void Pixels::strobo(uint8_t colorIndex, uint8_t numClusters_, uint8_t clusters_[
     else {
         dimValue = 0;
     }
-
-    // set all strips to off before making pattern
-    strip->setColorsAll(0, 0);
     
     // define first start and end pixels
     uint16_t pixelStart = 0;

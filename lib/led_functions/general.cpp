@@ -170,6 +170,10 @@ void Pixels::setDimmedRange(uint16_t index_start, uint16_t index_end, uint8_t co
         strip->setColorsIndividualFixed(i_led, color_index, dimstate[i_led]);
     }
 
+    // if (index_start == 99){
+    //     printf("LED100: %.2f\n", dimstate[99]);
+    // }
+    
 }
 
 

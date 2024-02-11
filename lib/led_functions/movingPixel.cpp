@@ -12,7 +12,7 @@
 #include <algorithm>
 
 // One of more traveling LEDs/pixels over the whole range, or per cluster
-void Pixels::movingPixel(uint8_t colorIndex, uint8_t numClusters_, uint8_t clusters_[], uint8_t direction, float fadetime, uint8_t num_pixels, bool is_disco) {
+void Pixels::movingPixel(uint8_t colorIndex, uint8_t numClusters_, uint8_t clusters_[], int direction, float fadetime, uint8_t num_pixels, bool is_disco) {
 
     // direction: clockwise of anti clockwise (1 or -1)
     // fadetime: can be any positive number which determines the time the LEDs dim to 5% of the original value
