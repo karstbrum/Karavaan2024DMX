@@ -26,8 +26,8 @@ void Pixels::moveClockwise(uint8_t numClusters, uint8_t clusters[], uint8_t clus
         }
     }
 
-
-    pulseIndex += ((Ts / 1000) * (BPM / 60) / freqdiv) * 2;
+    // finish full circle in 2 beats
+    pulseIndex += ((Ts / 1000) * (BPM / 60) / freqdiv) * numClusters / 2;
 
     // int initialClusterIndex = direction == 1 ? clusterIndex : numClusters;
     int initialClusterIndex = 0;

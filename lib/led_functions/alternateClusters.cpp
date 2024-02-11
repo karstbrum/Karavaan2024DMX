@@ -16,7 +16,7 @@ void Pixels::alternateClusters(bool clustergroup1[MAXSIDES_L], bool clustergroup
     
     // iterate on pulse index
     float Ts_ = Ts;
-    pulseIndex += ((Ts_ / 1000) * (BPM / 60)) / freqdiv; // Ts*BPS (s^1 * s^-1)
+    pulseIndex += 1.5 * ((Ts_ / 1000) * (BPM / 60)) / freqdiv; // Ts*BPS (s^1 * s^-1)
     pulseIndex = pulseIndex > 1 ? pulseIndex - 1 : pulseIndex;
     
     // first check modulus condition

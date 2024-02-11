@@ -20,7 +20,7 @@ void Pixels::updownPositionBased(float updown_time, float fadetime, float phase,
     float Ts_ = Ts;
 
     // count the pulseindex normally
-    pulseIndex += (Ts_ / 1000) * (BPM / 60) / freqdiv; // Ts*BPS (s^1 * s^-1)
+    pulseIndex += (Ts_ / 1000) * (BPM / 60) / 3 / freqdiv; // Ts*BPS (s^1 * s^-1)
 
     // if pulseindex exceeds 1, select the cluster to light up
     if (pulseIndex > 1) {
