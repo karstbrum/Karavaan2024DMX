@@ -259,7 +259,7 @@ void setmode(){
       float on_chance = 1-mapValue(0, 255, 0, 1, active_states[EXTRA2]);
       LED.strobo(0, num_clusters, clusters, ramp_time, on_time, on_chance, fade_time);
       break; 
-    }
+      }
 
     case 1: {
       uint8_t clusters[] =      {2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 4, 5, 4, 6};
@@ -269,7 +269,7 @@ void setmode(){
       int direction = active_states[EXTRA1] < 128 ? 1 : -1;
       LED.moveClockwise(num_clusters, clusters, cluster_order, direction, fade_time);
       break; 
-    }
+      }
 
     case 2: {
       // between 0 and 0.9
@@ -278,7 +278,7 @@ void setmode(){
       uint8_t flash_chance = (uint8_t)mapValue(0, 255, 5, 75, active_states[EXTRA2]);
       LED.flashingPixels(0, flash_chance, fadetime);
       break; 
-    }
+      }
 
     case 3: {
       float width_angle = 2.0f*PI/36.0f;
@@ -292,7 +292,7 @@ void setmode(){
         LED.twoColorRotation(1, width_angle, direction, fadetime);
       }
       break;
-    }
+      }
 
     case 4: {
       float circle_width = 0.08;
@@ -302,7 +302,7 @@ void setmode(){
       int direction = active_states[EXTRA2] < 128 ? 1 : -1;
       LED.movingCircles(num_circles, circle_width, direction, fadetime, clip_radius);
       break;
-    }
+      }
 
     case 5: {
       float fadetime = mapValue(0, 255, 0, 5, active_states[DIMMER]);
@@ -311,7 +311,7 @@ void setmode(){
       float y_range[] = {-0.3, 0.3};
       LED.movingBlock(block_size, fadetime, move_width, y_range);
       break;
-    }
+      }
 
     case 6: {
       // use clusters of a pole of a full letter
@@ -323,11 +323,11 @@ void setmode(){
       float on_time = mapValue(0, 255, 0.2, 0.5, active_states[EXTRA1]);
       LED.alternateClusters(clusters1, clusters2, fadetime, on_time);
       break;
-    }
+      }
 
     case 7: {
       // do nothing.. the button is broken
-    }
+      }
 
     case 8: {
       // use clusters of a pole of a full letter
@@ -338,7 +338,7 @@ void setmode(){
       float line_width = 0.05;
       LED.movingLines(number_of_lines, direction, fadetime, linewidth);
       break;
-    }
+      }
 
     case 9: {
       // use clusters of a pole of a full letter
@@ -349,7 +349,20 @@ void setmode(){
       float y_range[] = {yl_b1, y_t2};
       LED.updownPositionBased(updown_time, fadetime, phase, line_width, y_range);
       break;
-    }
+      }
+
+    case 10: {
+      // use clusters of a pole of a full letter
+      uint8_t clusters[] = {2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 4, 5, 4, 6};
+      uint8_t num_clusters = sizeof(clusters)/sizeof(uint8_t);
+      // between 0 and 0.99
+      float fadetime = mapValue(0, 255, 0, 5, active_states[DIMMER]);
+      // between 1 and 4
+      uint8_t num_pixels = (uint8_t)mapValue(0, 255, 1, 4, active_states[EXTRA1]);
+      int direction = active_states[EXTRA2] < 128 ? 1 : -1;
+      LED.movingPixel(0, num_clusters, clusters, direction, fadetime, num_pixels, true);
+      break; 
+      }
 
     }
 }
