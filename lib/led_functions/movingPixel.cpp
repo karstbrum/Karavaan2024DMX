@@ -48,7 +48,7 @@ void Pixels::movingPixel(uint8_t colorIndex, uint8_t numClusters_, uint8_t clust
     }
 
     // distance between pixels based on the number
-    float pixel_distance = 1/static_cast<float>(num_pixels);
+    float pixel_distance = 1.0f/static_cast<float>(num_pixels);
 
     // fill in the pos_array 
     for (uint8_t i_pixel = 0; i_pixel < num_pixels; i_pixel++){
@@ -60,7 +60,7 @@ void Pixels::movingPixel(uint8_t colorIndex, uint8_t numClusters_, uint8_t clust
         pos_array[i_pixel] = pulseIndex + i_pixel*pixel_distance;
 
         // make sure the relative position is between 0 and 1
-        pos_array[i_pixel] = (pos_array[i_pixel] >= 1) ? pos_array[i_pixel] - 1 : pos_array[i_pixel];
+        pos_array[i_pixel] = (pos_array[i_pixel] > 1) ? pos_array[i_pixel] - 1 : pos_array[i_pixel];
 
     }
 
@@ -75,14 +75,14 @@ void Pixels::movingPixel(uint8_t colorIndex, uint8_t numClusters_, uint8_t clust
     for (uint8_t i_cluster = 0; i_cluster < numClusters; i_cluster++) {
 
         // determine the normalized distance between 2  for the cluster
-        float norm_dist = pixelwidth / 2 / static_cast<float>(pixelEnd - pixelStart);
+        float norm_dist = pixelwidth / 2 / static_cast<float>(pixelsPerCluster[i_cluster]);
 
         // Let the start be smooth by making a half sine (0 to pi give result 0 to 1)
         // loop through all LEDs in cluster to check the value
-        for (uint16_t i_led = 0; i_led <= pixelEnd - pixelStart; i_led++) {
+        for (uint16_t i_led = 0; i_led <= pixelsPerCluster[i_cluster]; i_led++) {
 
             // define normalized position of led
-            float norm_pos = i_led / static_cast<float>(pixelEnd-pixelStart);
+            float norm_pos = i_led / static_cast<float>(pixelsPerCluster[i_cluster]);
 
             // define dimvalue as 0, will change below if in on range
             float dimvalue = 0;
@@ -91,39 +91,54 @@ void Pixels::movingPixel(uint8_t colorIndex, uint8_t numClusters_, uint8_t clust
             for (uint8_t i_pixel = 0; i_pixel < num_pixels; i_pixel++){
                 
                 // define min and max pos
-                float pos_min;
-                float pos_max;
+                float pos_min = pos_array[i_pixel] - norm_dist;
+                float pos_max = pos_array[i_pixel] + norm_dist;
+                float pos_min_prev = pos_array_prev[i_pixel] - norm_dist;
+                float pos_max_prev = pos_array_prev[i_pixel] + norm_dist;
 
                 // define the range that should light up
                 // the minimum (or maximum) value is determined by checking the
                 // minimum value of the new pos_array an maximum of the previous
+                // check if the max or min position has to jump back to 0 or 1
                 if (direction == 1){
-                    // check minimum number of prev pos max an new pos min
-                    pos_min = pos_array[i_pixel] - pixelwidth/2;
-                    float pos_max_prev = pos_array_prev[i_pixel] + pixelwidth/2;
-                    pos_min = pos_min < pos_max_prev ? pos_min : pos_max_prev;
-                    // pos max is newly defined
-                    pos_max = pos_array[i_pixel] + pixelwidth/2;
-                }
+                    
+                    // do some magic on the crossover from 1 to 0
+                    if (pos_max < pos_max_prev){
+                        if (norm_pos > pos_max_prev - 1 && norm_pos < pos_min || norm_pos > pos_max_prev - 1 && norm_pos < pos_min){
+                            dimvalue = 1;
+                            break;
+                        }
+                    }
+                    else if (pos_min > pos_max_prev) {
+                        pos_min = pos_max_prev;
+                    }
 
+                }
+                // for direction = -1, different logic is needed
                 else {
-                    // pos min is newly defined
-                    pos_min = pos_array[i_pixel] - pixelwidth/2;
-                    // check maximum number of prev pos min en new pos max
-                    pos_max = pos_array[i_pixel] + pixelwidth/2;
-                    float pos_min_prev = pos_array_prev[i_pixel] + pixelwidth/2;
-                    pos_max = pos_max > pos_min_prev ? pos_max : pos_min_prev;
+
+                    // do some magic on the crossover from 1 to 0
+                    if (pos_min > pos_min_prev){
+                        if (norm_pos < pos_min_prev + 1 && norm_pos > pos_max || norm_pos > pos_max - 1 && norm_pos < pos_min_prev){
+                            dimvalue = 1;
+                            break;
+                        }
+                    }
+                    else if (pos_max < pos_min_prev) {
+                        pos_max = pos_min_prev;
+                    }
                 }
                 
                 
                 // check if the LED is is in the (-2, +2) range of a led that should be on
                 // if the led is in the range, find the correctvalue
-                if (norm_pos >= pos_min && norm_pos <= pos_max){
+                if ((norm_pos > pos_min && norm_pos <= pos_max) || norm_pos < pos_max-1 || norm_pos > pos_min+1 ){
 
                     // just make it 1 for continuity 
                     dimvalue = 1;
+                    break;
 
-                }
+                }    
 
             }
 
@@ -136,7 +151,6 @@ void Pixels::movingPixel(uint8_t colorIndex, uint8_t numClusters_, uint8_t clust
         // define start and end pixel of the cluster
         if (i_cluster < numClusters-1){
             pixelStart += pixelsPerCluster[i_cluster];
-            pixelEnd = pixelStart + pixelsPerCluster[i_cluster+1] -1;
         }
 
     }

@@ -358,9 +358,10 @@ void setmode(){
       // between 0 and 0.99
       float fadetime = mapValue(0, 255, 0, 5, active_states[DIMMER]);
       // between 1 and 4
-      uint8_t num_pixels = (uint8_t)mapValue(0, 255, 1, 4, active_states[EXTRA1]);
+      uint8_t num_pixels = (uint8_t)mapValue(0, 255, 1, 10, active_states[EXTRA1]);
       int direction = active_states[EXTRA2] < 128 ? 1 : -1;
-      LED.movingPixel(0, num_clusters, clusters, direction, fadetime, num_pixels, true);
+      float bandwidth = 1;
+      LED.movingPixel(0, num_clusters, clusters, direction, fadetime, num_pixels, bandwidth);
       break; 
       }
 
@@ -382,7 +383,7 @@ void LightsTaskcode(void *pvParameters)
   // Time spent in the main loop
   int loopTime = 0;
 
-  active_states[MODE] = 8;
+  active_states[MODE] = 10;
 
   // another option to have a timed loop is to use vTaskDelayUntil(), have to look into it first
   for (;;)
@@ -406,7 +407,7 @@ void LightsTaskcode(void *pvParameters)
       setColor();
 
       // set BPM
-      // active_states[BPM] = 30;
+      active_states[BPM] = 200;
       LED.setBPM(active_states[BPM]);
 
       // set mode
