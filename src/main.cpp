@@ -505,8 +505,7 @@ void ControllerTaskcode(void *pvParameters)
       }
     }
 
-    discostates[0] = 100;
-    esp_err_t send_status = esp_now_send(0, (uint8_t *) &discostates, disco_dmx_size);
+    // esp_err_t send_status = esp_now_send(0, (uint8_t *) &discostates, disco_dmx_size);
     
     // sync DMX states to
     sync_states();
