@@ -248,6 +248,7 @@ void setColor(){
 }
 
 void setmode(){
+  LED.freqdiv = 1;
   switch (active_states[MODE])
     {
     case 0: {
@@ -272,10 +273,10 @@ void setmode(){
       }
 
     case 2: {
-      // between 0 and 0.9
+      // between 0 and 0.99
       float fadetime = mapValue(0, 255, 0, 5, active_states[DIMMER]);
-      // flash chance between 5 and 75
-      uint8_t flash_chance = (uint8_t)mapValue(0, 255, 5, 75, active_states[EXTRA2]);
+      // flash chance between 5 and 75 %
+      uint8_t flash_chance = (uint8_t)mapValue(0, 255, 5, 50, active_states[EXTRA2]);
       LED.flashingPixels(0, flash_chance, fadetime);
       break; 
       }
@@ -335,7 +336,6 @@ void setmode(){
       float fadetime = mapValue(0, 255, 0, 5, active_states[DIMMER]); 
       uint8_t direction = mapValue(0, 255, 1, 4, active_states[EXTRA1]);
       uint8_t number_of_lines = mapValue(0, 255, 1, 4, active_states[EXTRA2]);
-      float line_width = 0.05;
       LED.movingLines(number_of_lines, direction, fadetime, linewidth);
       break;
       }
