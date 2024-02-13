@@ -222,7 +222,13 @@ void setmode(){
       }
 
     case 4: {
-
+      float circle_width = 0.08;
+      float clip_radius = 1;
+      float fadetime = mapValue(0, 255, 0, 5, active_states[DIMMER]);
+      uint8_t num_circles = static_cast<uint8_t>(round(mapValue(0, 255, 1, 5, active_states[EXTRA1])));
+      int direction = active_states[EXTRA2] < 128 ? 1 : -1;
+      LED.movingCircles(num_circles, circle_width, direction, fadetime, clip_radius);
+      break;
       }
 
     case 5: {
