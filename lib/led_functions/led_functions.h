@@ -66,6 +66,7 @@ class Pixels {
         void movingBlock(float block_size, float fadetime, float move_width, float y_range[]);
         void updownPositionBased(float updown_time, float fadetime, float phase, float line_width, float y_range[]);
         void movingLines(uint8_t number_of_lines, uint8_t direction, float fadetime, float linewidth);
+        void heartbeat(float block_size, float fadetime, bool inverse);
 
 
         int clusterIndex = 0;
