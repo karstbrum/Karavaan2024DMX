@@ -20,7 +20,7 @@ const uint8_t DIM = 1;
 const uint8_t RED = 2;
 const uint8_t GREEN = 3;
 const uint8_t BLUE = 4;
-const uint8_t WHITE = 5;
+const uint8_t DIMMER = 5;
 const uint8_t EXTRA1 = 6;
 const uint8_t EXTRA2 = 7;
 const uint8_t MODE = 8;
@@ -29,6 +29,20 @@ uint8_t active_states[9];
 // define tasks (multicore)
 TaskHandle_t LEDTask;
 TaskHandle_t ControllerTask;
+
+
+// define start angle of first and second strip
+float a1 = PI/12 * 1;
+float a2 = PI + a1;
+
+// define angle difference between clusters
+float da = PI/12 * 2.5;
+
+// define relative start and end angles
+// the diameter is normalized to 1
+float start_a[] = {   a1,   a1+da, a1+2*da, a1+3*da,    a2,   a2+da, a2+2*da, a2+3*da};
+float end_a[] =   {a1+da, a1+2*da, a1+3*da, a1+4*da, a2+da, a2+2*da, a2+3*da, a2+4*da};
+float l_sides[] = { 0.5f,    0.5f,    0.5f,    0.5f,  0.5f,    0.5f,    0.5f,    0.5f};
 
 // 288 lights divided in 8 segments
 uint16_t LEDsPerSide[] = {36, 36, 36, 36, 36, 36, 36, 36}; 
@@ -119,47 +133,162 @@ void set_constraint()
   active_states[BPM] = active_states[BPM] > 1 ? active_states[BPM] : 1;
 }
 
+void setColor(){
+
+  float red = static_cast<float>(active_states[RED]);
+  float green = static_cast<float>(active_states[GREEN]);
+  float blue = static_cast<float>(active_states[BLUE]);
+  float white = 0;
+
+  // if red green and blue are almost equal, select white
+  if (abs(red - green) + abs(green - blue) < 10){
+    white = 255;
+    red = 0;
+    green = 0;
+    blue = 0;
+  } 
+
+  // else normalize red green and blue to 255
+  else {
+    float max_color = red;
+    max_color = green > max_color ? green : max_color;
+    max_color = blue > max_color ? blue : max_color;
+    
+    // define normalization factor
+    // divide all colors by max color and multiply by 255
+    float max_color_f = max_color;
+    red = red/max_color*255.0f;
+    green = green/max_color*255.0f;
+    blue = blue/max_color*255.0f;
+
+  }
+
+  uint8_t white_i = static_cast<uint8_t>(white);
+  uint8_t red_i = static_cast<uint8_t>(red);
+  uint8_t green_i = static_cast<uint8_t>(green);
+  uint8_t blue_i = static_cast<uint8_t>(blue);
+
+  LED.changeColor(white_i, red_i, green_i, blue_i);
+
+}
+
 void setmode(){
+  LED.freqdiv = 1;
   switch (active_states[MODE])
     {
     case 0: {// 
       // use clusters of a pole of a full letter
       uint8_t clusters[] = {1, 1, 1, 1, 1, 1, 1, 1};
       uint8_t num_clusters = sizeof(clusters)/sizeof(uint8_t);
-      float fadetime = 0.05;
-      float on_time = 1-mapValue(0, 255, 0, 1, active_states[EXTRA1]); 
+      float ramp_time = 0.02;
+      float fade_time = mapValue(0, 255, 0, 5, active_states[DIMMER]);
+      float on_time = 1-mapValue(0, 255, 0, 1, active_states[EXTRA1]);
       float on_chance = 1-mapValue(0, 255, 0, 1, active_states[EXTRA2]);
-      LED.strobo(0, num_clusters, clusters, fadetime, on_time, on_chance);
-      break; }
+      LED.strobo(0, num_clusters, clusters, ramp_time, on_time, on_chance, fade_time);
+      break; 
+      }
 
     case 1: {// 
       // use clusters of a pole of a full letter
-      uint8_t clusters[] = {8};
+      uint8_t clusters[] =      {1, 1, 1, 1, 1, 1, 1, 1};
+      uint8_t cluster_order[] = {0, 1, 2, 3, 4, 5, 6, 7};
       uint8_t num_clusters = sizeof(clusters)/sizeof(uint8_t);
-      int direction = 1;
-      // between 0 and 0.99
-      float fadetime = mapValue(0, 255, 0, 5, active_states[EXTRA1]);
-      // between 1 and 4
-      uint8_t num_pixels = (uint8_t)mapValue(0, 255, 1, 4, active_states[EXTRA2]);
-      LED.movingPixel(0, num_clusters, clusters, direction, fadetime, num_pixels, true);
-      break; }
+      float fade_time = mapValue(0, 255, 0, 5, active_states[DIMMER]);
+      int direction = active_states[EXTRA1] < 128 ? 1 : -1;
+      LED.moveClockwise(num_clusters, clusters, cluster_order, direction, fade_time);
+      break; 
+      }
 
     case 2: {// 
       // between 0 and 0.99
-      float fadetime = mapValue(0, 255, 0, 5, active_states[EXTRA1]);
+      float fadetime = mapValue(0, 255, 0, 5, active_states[DIMMER]);
       // flash chance between 5 and 75 %
       uint8_t flash_chance = (uint8_t)mapValue(0, 255, 5, 50, active_states[EXTRA2]);
       LED.flashingPixels(0, flash_chance, fadetime);
       break; }
 
     case 3: {// 
+      float width_angle = 2.0f*PI/100.0f;
+      int direction = active_states[EXTRA2] < 128 ? 1 : -1;
+      float fadetime = mapValue(0, 255, 0, 5, active_states[DIMMER]);
+      if (active_states[EXTRA1] < 85){
+        LED.oneColorRotation(1, width_angle, direction, fadetime);
+      } else if (active_states[EXTRA1] >= 85 && active_states[EXTRA1] < 171) {
+        LED.oneColorRotation(2, width_angle, direction, fadetime);
+      } else {
+        LED.twoColorRotation(1, width_angle, direction, fadetime);
+      }
+      break;
+      }
+
+    case 4: {
+
+      }
+
+    case 5: {
+      float fadetime = mapValue(0, 255, 0, 5, active_states[DIMMER]);
+      float block_size = mapValue(0, 255, 0.1, 0.4, active_states[EXTRA1]);
+      float move_width = mapValue(0, 255, 1, 4, active_states[EXTRA2]);
+      float y_range[] = {-0.5, 0.5};
+      LED.movingBlock(block_size, fadetime, move_width, y_range);
+      break;
+      }
+
+    case 6: {
       // use clusters of a pole of a full letter
-      bool clusters1[] = {1, 1, 1, 1, 0, 0, 0, 0};
-      bool clusters2[] = {0, 0, 0, 0, 1, 1, 1, 1};
-      float fadetime = mapValue(0, 255, 0, 5, active_states[EXTRA1]); 
-      float on_time = mapValue(0, 255, 0.02, 0.8, active_states[EXTRA2]);
-      LED.alternateClusters(clusters1, clusters2, fadetime, on_time);
-      break; }
+      bool clusters1_opt1[] = {1, 1, 1, 1, 0, 0, 0, 0};
+      bool clusters2_opt1[] = {0, 0, 0, 0, 1, 1, 1, 1};
+      bool clusters1_opt2[] = {1, 1, 0, 0, 1, 1, 0, 0};
+      bool clusters2_opt2[] = {0, 0, 1, 1, 0, 0, 1, 1};
+      float fadetime = mapValue(0, 255, 0, 5, active_states[DIMMER]); 
+      float on_time = mapValue(0, 255, 0.2, 0.5, active_states[EXTRA1]);
+      // select different clusters based on input
+      if (active_states[EXTRA2] < 128){
+        LED.alternateClusters(clusters1_opt1, clusters2_opt1, fadetime, on_time);
+      } else {
+        LED.alternateClusters(clusters1_opt2, clusters2_opt2, fadetime, on_time);
+      }
+      break;
+      }
+
+    case 7: {
+      // do nothing.. the button is broken
+      }
+
+    case 8: {
+      // use clusters of a pole of a full letter
+      float linewidth = 0.05;
+      float fadetime = mapValue(0, 255, 0, 5, active_states[DIMMER]); 
+      uint8_t direction = mapValue(0, 255, 1, 4, active_states[EXTRA1]);
+      uint8_t number_of_lines = mapValue(0, 255, 1, 4, active_states[EXTRA2]);
+      LED.movingLines(number_of_lines, direction, fadetime, linewidth);
+      break;
+      }
+
+    case 9: {
+      // use clusters of a pole of a full letter
+      float fadetime = mapValue(0, 255, 0, 5, active_states[DIMMER]); 
+      float updown_time = mapValue(0, 255, 0.5, 1, active_states[EXTRA1]);
+      float phase = mapValue(0, 255, -1, 1, active_states[EXTRA2]);
+      float line_width = 0.05;
+      float y_range[] = {-0.5, 0.5};
+      LED.updownPositionBased(updown_time, fadetime, phase, line_width, y_range);
+      break;
+      }
+
+    case 10: {
+      // use clusters of a pole of a full letter
+      uint8_t clusters[] = {8};
+      uint8_t num_clusters = sizeof(clusters)/sizeof(uint8_t);
+      // between 0 and 0.99
+      float fadetime = mapValue(0, 255, 0, 5, active_states[DIMMER]);
+      // between 1 and 4
+      uint8_t num_pixels = (uint8_t)mapValue(0, 255, 1, 10, active_states[EXTRA1]);
+      int direction = active_states[EXTRA2] < 128 ? 1 : -1;
+      float bandwidth = 1;
+      LED.movingPixel(0, num_clusters, clusters, direction, fadetime, num_pixels, bandwidth);
+      break; 
+      }
 
     }
 }
@@ -177,7 +306,14 @@ void setmotor(){
 // Task for handling the LEDs on core 1
 void LightsTaskcode( void * pvParameters ){
 
+  // set pinmode of discoball motor to output
   pinMode(motor_pin, OUTPUT);
+
+  // define LED positions
+  LED.definePositions_polar(start_a, end_a, l_sides);
+
+  // reset for stability
+  LED.resetPixels();
 
   // another option to have a timed loop is to use vTaskDelayUntil(), have to look into it first
   for(;;){
@@ -195,7 +331,7 @@ void LightsTaskcode( void * pvParameters ){
       LED.setDimmer((static_cast<float>(active_states[DIM]))/255);
 
       // set color
-      LED.changeColor(active_states[WHITE], active_states[RED], active_states[GREEN], active_states[BLUE]);
+      setColor();
 
       // set BPM
       LED.setBPM(active_states[BPM]);

@@ -51,7 +51,7 @@ void Pixels::resetPixels(){
     strip->resetPixels();
 }
 
-void Pixels::definePositions(float x_start[], float y_start[], float x_end[], float y_end[]){
+void Pixels::definePositions_carthesian(float x_start[], float y_start[], float x_end[], float y_end[]){
 
     // The first and last LED are defined on:
     // (x, y) = (x_start + x_spacing/2, y_start + y_spacing/2)
@@ -90,6 +90,54 @@ void Pixels::definePositions(float x_start[], float y_start[], float x_end[], fl
             // if the y position is positive, a is within [0    pi]
             // if the y position is negative, a is within [pi 2*pi]
             a = y < 0 ? 2*PI-a : a;
+
+            // add numbers to pos data array
+            pixel_pos[XPOS][i_pixel] = x;
+            pixel_pos[YPOS][i_pixel] = y;
+            pixel_pos[LPOS][i_pixel] = l;
+            pixel_pos[APOS][i_pixel] = a;
+
+            printf("x: %f, y: %f, l: %f, a: %f\n", x, y, l, a);
+
+            // increment pixels
+            i_pixel++;
+
+        }
+
+    }
+
+}
+
+void Pixels::definePositions_polar(float a_start[], float a_end[], float l_side[]){
+
+    // The first and last LED are defined on:
+    // (x, y) = (x_start + x_spacing/2, y_start + y_spacing/2)
+    // (x, y) = (x_end   - x_spacing/2, y_end   - y_spacing/2)
+
+    // define pixel index
+    uint16_t i_pixel = 0;
+
+    // loop through all sides
+    for (uint16_t i_side = 0; i_side < numSides; i_side++) {
+
+        // define the spacing between the les on the current side
+        float a_spacing = (a_end[i_side]-a_start[i_side]) / (pixelsPerSide[i_side]);
+
+        // define first position
+        float a_first = a_start[i_side] + a_spacing/2;
+
+        // loop through all pixels on the current side
+        for (uint16_t k = 0; k < pixelsPerSide[i_side]; k++){
+            
+            // define x and y position of the pixel
+            float a = a_first + k*a_spacing;
+
+            // get the radius
+            float l = l_side[i_side];
+
+            // get x and y based on the angle and length (counterclockwise with east == a=0)
+            float x = cos(a)*l;
+            float y = sin(a)*l;
 
             // add numbers to pos data array
             pixel_pos[XPOS][i_pixel] = x;
@@ -152,7 +200,7 @@ void Pixels::setAlpha(float dim_time){
     // number of samples to to go to the values
     float num_samples = dim_time/Ts*1000 - 1;
     // get the alpha value, only calculate when num_samples > 0
-    alpha_disc = (num_samples > 0) ? std::pow(0.01, 1/num_samples) : 0;
+    alpha_disc = (num_samples > 0) ? std::pow(0.001, 1/num_samples) : 0;
 
 }
 
@@ -169,7 +217,7 @@ void Pixels::setDimmedRange(uint16_t index_start, uint16_t index_end, uint8_t co
         // set color and correct dimvalue to the LED
         strip->setColorsIndividualFixed(i_led, color_index, dimstate[i_led]);
     }
-
+    
 }
 
 

@@ -15,7 +15,7 @@
 void Pixels::flashingPixels(uint8_t colorIndex, uint8_t flash_chance, float fadetime){
 
     float Ts_ = Ts;
-    pulseIndex += ((Ts_ / 1000) * (BPM / 60)) / freqdiv; // Ts*BPS (s^1 * s^-1)
+    pulseIndex += 2 * ((Ts_ / 1000) * (BPM / 60)) / freqdiv; // Ts*BPS (s^1 * s^-1)
     
     if (pulseIndex > 1) {
 

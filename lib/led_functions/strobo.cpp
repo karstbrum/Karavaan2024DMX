@@ -12,7 +12,7 @@
 #include <algorithm>
 
 // flashing clusters, ammount can be selected 
-void Pixels::strobo(uint8_t colorIndex, uint8_t numClusters_, uint8_t clusters_[], float fadetime, float on_time, float on_chance) {
+void Pixels::strobo(uint8_t colorIndex, uint8_t numClusters_, uint8_t clusters_[], float ramptime, float on_time, float on_chance, float fadetime) {
 
     // ontime is the relative plateua time
     // clusterson is the relative ammount of clusters that is turned on
@@ -43,8 +43,8 @@ void Pixels::strobo(uint8_t colorIndex, uint8_t numClusters_, uint8_t clusters_[
     number_on = number_on > 1 ? number_on : 1;
     number_on = number_on < numClusters ? number_on : numClusters;
 
-    // count to 1 every BPM / freqdiv
-    pulseIndex += (Ts_ / 1000) * (BPM / 60) / freqdiv; // Ts*BPS (s^1 * s^-1)
+    // count to 1 every 0.5 BPM / freqdiv
+    pulseIndex += 1.5 * (Ts_ / 1000) * (BPM / 60) / freqdiv; // Ts*BPS (s^1 * s^-1)
 
     // if pulseindex exceeds 1, select the cluster to light up
     if (pulseIndex >= 1) {
@@ -70,18 +70,18 @@ void Pixels::strobo(uint8_t colorIndex, uint8_t numClusters_, uint8_t clusters_[
     if (pulseIndex > 0.5 - on_time/2 && pulseIndex < 0.5 + on_time/2){
         dimValue = 1;
     } // off to on
-    else if(pulseIndex > 0.5 - on_time/2 - fadetime && pulseIndex < 0.5 - on_time/2) {
-        dimValue = (pulseIndex - (0.5 - on_time/2 - fadetime)) / fadetime;
+    else if(pulseIndex > 0.5 - on_time/2 - ramptime && pulseIndex < 0.5 - on_time/2) {
+        dimValue = (pulseIndex - (0.5 - on_time/2 - ramptime)) / ramptime;
     } // on to off
-    else if(pulseIndex < 0.5 + on_time/2 + fadetime && pulseIndex > 0.5 + on_time/2) {
-        dimValue = 1 - (pulseIndex - (0.5 + on_time/2)) / fadetime;
+    else if(pulseIndex < 0.5 + on_time/2 + ramptime && pulseIndex > 0.5 + on_time/2) {
+        dimValue = 1 - (pulseIndex - (0.5 + on_time/2)) / ramptime;
     }  // off
     else {
         dimValue = 0;
     }
 
-    // set all strips to off before making pattern
-    strip->setColorsAll(0, 0);
+    // configure the dim system
+    Pixels::setAlpha(fadetime);
     
     // define first start and end pixels
     uint16_t pixelStart = 0;
@@ -98,8 +98,9 @@ void Pixels::strobo(uint8_t colorIndex, uint8_t numClusters_, uint8_t clusters_[
         }
 
         if(cluster_on){
-            // TODO: us setDimmedRange here instead, test first with this
-            strip->setRange(pixelStart, pixelEnd, colorIndex, dimValue);
+            Pixels::setDimmedRange(pixelStart, pixelEnd, 0, dimValue);   
+        } else {
+            Pixels::setDimmedRange(pixelStart, pixelEnd, 0, 0); 
         }
 
         // define start and end pixel of the cluster

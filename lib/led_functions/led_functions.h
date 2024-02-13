@@ -24,7 +24,8 @@ class Pixels {
         Pixels(uint8_t numSides_, uint16_t pixelsPerSide_[], uint8_t numPins_, uint8_t sidesPerPin_[], uint8_t LEDPin_[], float Ts_);
 
         // function for defining the positoins of individual LEDs
-        void definePositions(float x_start[], float y_start[], float x_end[], float y_end[]);
+        void definePositions_carthesian(float x_start[], float y_start[], float x_end[], float y_end[]);
+        void definePositions_polar(float a_start[], float a_end[], float l[]);
 
         // display current color
         void activateColor();
@@ -50,20 +51,23 @@ class Pixels {
         void setColor(uint8_t colorIndex, float dim = 1);
 
         // functions based on individual leds or clusters
-        void strobo(uint8_t colorIndex, uint8_t numClusters_ = 0, uint8_t clusters_[MAXSIDES_L] = {}, float fadetime = 0.1, float on_time = 1, float on_chance = 1);
+        void strobo(uint8_t colorIndex, uint8_t numClusters_ = 0, uint8_t clusters_[MAXSIDES_L] = {}, float ramptime = 0.1, float on_time = 1, float on_chance = 1, float fadetime = 0);
         void moveClockwise(uint8_t numClusters_ = 0, uint8_t clusters_[MAXSIDES_L] = {}, uint8_t cluster_order_[MAXSIDES_L] = {}, int direction = 1, float fadetime = 0.1);
-        void movingPixel(uint8_t colorIndex, uint8_t numClusters_, uint8_t clusters_[], uint8_t direction = 1, float fadetime = 0, uint8_t num_pixels = 1, bool is_disco = false);
+        void movingPixel(uint8_t colorIndex, uint8_t numClusters_, uint8_t clusters_[], int direction = 1, float fadetime = 0, uint8_t num_pixels = 1, float pixelband = 1);
         void flashingPixels(uint8_t colorIndex, uint8_t flash_chance, float fadetime = 0);
         void blockParty(uint8_t numClusters_ = 0, uint8_t clusters_[MAXSIDES_L] = {}, uint8_t cluster_order_[MAXSIDES_L] = {}, float fadetime = 0.1);
         void alternateClusters(bool clustergroup1[MAXSIDES_L], bool clustergroup2[MAXSIDES_L], float fadetime = 0, float on_time = 0.5);
 
         // functions based on coordinates
-        void oneColorRotation(uint8_t colorIndex, uint8_t num_angles, float width_angle, uint8_t direction, float fadetime = 0);
-        void twoColorRotation(uint8_t colorIndex, uint8_t num_angles, float width_angle, uint8_t direction, float fadetime = 0);
-        void threeColorRotation(uint8_t colorIndex, uint8_t num_angles, float width_angle, uint8_t direction, float fadetime = 0);
-        void movingCircles(uint8_t colorIndex, uint8_t num_circles, float circle_width, uint8_t direction, float fadetime = 0);
+        void oneColorRotation(uint8_t num_angles, float width_angle, int direction, float fadetime = 0);
+        void twoColorRotation(uint8_t num_angles, float width_angle, int direction, float fadetime = 0);
+        void threeColorRotation(uint8_t num_angles, float width_angle, int direction, float fadetime = 0);
+        void movingCircles(uint8_t num_circles, float circle_width, int direction, float fadetime = 0, float clip_radius = 1);
+        void movingBlock(float block_size, float fadetime, float move_width, float y_range[]);
+        void updownPositionBased(float updown_time, float fadetime, float phase, float line_width, float y_range[]);
+        void movingLines(uint8_t number_of_lines, uint8_t direction, float fadetime, float linewidth);
 
-        // variables for counting up clusters
+
         int clusterIndex = 0;
 
         // frequency divider
@@ -109,6 +113,15 @@ class Pixels {
         // number of clusters to turn on - used for strobo.cpp
         uint8_t number_on = 0;
         uint8_t clusterindices[MAXSIDES_L] = {};
+
+        // start and end position and direction of block, used for movingBlock.cpp
+        float yb_start = 0;
+        float yb_end = 0;
+        int move_direction = 1;
+
+        // current and previous positions, used for movingPixel.cpp
+        float pos_array_prev[50]; 
+        float pos_array[50]; 
 
         // RGBW class (self made)
         RGBW* strip;
