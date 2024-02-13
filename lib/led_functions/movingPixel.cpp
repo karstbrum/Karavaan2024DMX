@@ -37,7 +37,7 @@ void Pixels::movingPixel(uint8_t colorIndex, uint8_t numClusters_, uint8_t clust
     }
 
     // count the pulseindex normally
-    pulseIndex +=  static_cast<float>(direction) * (Ts_ / 1000) * (BPM / 60) / freqdiv; // Ts*BPS (s^1 * s^-1)
+    pulseIndex +=  static_cast<float>(direction) * (Ts_ / 1000) * (BPM / 60) / static_cast<float>(num_pixels) / freqdiv; // Ts*BPS (s^1 * s^-1)
 
     // if pulseindex exceeds 1, select the cluster to light up
     if (pulseIndex > 1 || pulseIndex < 0) {
@@ -79,10 +79,10 @@ void Pixels::movingPixel(uint8_t colorIndex, uint8_t numClusters_, uint8_t clust
 
         // Let the start be smooth by making a half sine (0 to pi give result 0 to 1)
         // loop through all LEDs in cluster to check the value
-        for (uint16_t i_led = 0; i_led <= pixelsPerCluster[i_cluster]; i_led++) {
+        for (uint16_t i_led = pixelStart; i_led <= pixelEnd; i_led++) {
 
             // define normalized position of led
-            float norm_pos = i_led / static_cast<float>(pixelsPerCluster[i_cluster]);
+            float norm_pos = (i_led-pixelStart) / static_cast<float>(pixelsPerCluster[i_cluster]);
 
             // define dimvalue as 0, will change below if in on range
             float dimvalue = 0;
@@ -142,15 +142,26 @@ void Pixels::movingPixel(uint8_t colorIndex, uint8_t numClusters_, uint8_t clust
 
             }
 
+            // if (i_led == 100){
+            //     printf("%.2f, ", dimvalue);
+            // }
+            // if (i_led == 101){
+            //     printf("%.2f, ", dimvalue);
+            // }
+            // if (i_led == 102){
+            //     printf("%.2f\n", dimvalue);
+            // }
+
             // set the value of the LED
             //strip->setRange(pixelStart+i_led, pixelStart+i_led, 0, dimvalue);
-            Pixels::setDimmedRange(pixelStart+i_led, pixelStart+i_led, 0, dimvalue);        
+            Pixels::setDimmedRange(i_led, i_led, 0, dimvalue);        
 
         }
 
         // define start and end pixel of the cluster
         if (i_cluster < numClusters-1){
             pixelStart += pixelsPerCluster[i_cluster];
+            pixelEnd = pixelStart + pixelsPerCluster[i_cluster+1] -1;
         }
 
     }

@@ -5,13 +5,17 @@
 
 // communication libraries
 #include<WiFi.h>
+#include<esp_wifi.h>
 #include<esp_now.h>
 
 // Sampling time (Ts)
 #define Ts 15
 
+// set mac adress (=needed when switching esp boards)
+uint8_t newMACAddress[] = {0xA8, 0x42, 0xE3, 0x8D, 0xB8, 0x04};
+
 // discoball states 
-const uint8_t disco_dmx_size = 80;
+const uint8_t disco_dmx_size = 96;
 uint8_t discostates[disco_dmx_size];
 
 // define active states (are used by the lights)
@@ -67,7 +71,7 @@ int loopTime = 0;
 
 // data receive function
 void OnDataRecv(const uint8_t * mac_addr, const uint8_t *incomingData, int len) {
-  
+
   // map data to discostates
   for(int i=0;i<disco_dmx_size;i++){
     discostates[i] = incomingData[i];
@@ -233,9 +237,9 @@ void setmode(){
 
     case 5: {
       float fadetime = mapValue(0, 255, 0, 5, active_states[DIMMER]);
-      float block_size = mapValue(0, 255, 0.1, 0.4, active_states[EXTRA1]);
-      float move_width = mapValue(0, 255, 1, 4, active_states[EXTRA2]);
-      float y_range[] = {-0.5, 0.5};
+      float block_size = mapValue(0, 255, 0.7, 0.8, active_states[EXTRA1]);
+      float move_width = mapValue(0, 255, 1, 2, active_states[EXTRA2]);
+      float y_range[] = {-0.6, 0.6};
       LED.movingBlock(block_size, fadetime, move_width, y_range);
       break;
       }
@@ -272,24 +276,17 @@ void setmode(){
       }
 
     case 9: {
-      // use clusters of a pole of a full letter
-      float fadetime = mapValue(0, 255, 0, 5, active_states[DIMMER]); 
-      float updown_time = mapValue(0, 255, 0.5, 1, active_states[EXTRA1]);
-      float phase = mapValue(0, 255, -1, 1, active_states[EXTRA2]);
-      float line_width = 0.05;
-      float y_range[] = {-0.5, 0.5};
-      LED.updownPositionBased(updown_time, fadetime, phase, line_width, y_range);
-      break;
+      // add mode
       }
 
     case 10: {
       // use clusters of a pole of a full letter
       uint8_t clusters[] = {8};
       uint8_t num_clusters = sizeof(clusters)/sizeof(uint8_t);
-      // between 0 and 0.99
+      // between 0 and 5
       float fadetime = mapValue(0, 255, 0, 5, active_states[DIMMER]);
       // between 1 and 4
-      uint8_t num_pixels = (uint8_t)mapValue(0, 255, 1, 10, active_states[EXTRA1]);
+      uint8_t num_pixels = (uint8_t)mapValue(0, 255, 2, 10, active_states[EXTRA1]);
       int direction = active_states[EXTRA2] < 128 ? 1 : -1;
       float bandwidth = 1;
       LED.movingPixel(0, num_clusters, clusters, direction, fadetime, num_pixels, bandwidth);
@@ -321,6 +318,8 @@ void LightsTaskcode( void * pvParameters ){
   // reset for stability
   LED.resetPixels();
 
+  // active_states[MODE] = 10;
+
   // another option to have a timed loop is to use vTaskDelayUntil(), have to look into it first
   for(;;){
     if(millis()-loopTime >= Ts){
@@ -340,6 +339,7 @@ void LightsTaskcode( void * pvParameters ){
       setColor();
 
       // set BPM
+      // active_states[BPM] = 30;
       LED.setBPM(active_states[BPM]);
 
       // set mode
@@ -358,6 +358,14 @@ void ControllerTaskcode( void * pvParameters ){
 
   // Set device as a Wi-Fi Station
   WiFi.mode(WIFI_STA);
+
+  // set mac address
+  esp_wifi_set_mac(WIFI_IF_STA, &newMACAddress[0]);
+
+  // print the mac address
+  Serial.println(WiFi.macAddress());
+
+  // setup espnow
   WiFi.disconnect();
   esp_now_init(); 
 

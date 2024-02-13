@@ -20,7 +20,7 @@ const dmx_port_t dmx_num = DMX_NUM_2;
 // DMX start address
 const int dmx_start_addr = 0;
 // number of states for LED and discoball
-const int led_dmx_size = 80; // muliples of 8
+const int led_dmx_size = 96; // muliples of 8
 const int disco_dmx_size = led_dmx_size;
 // DMX size (number of addresses)
 const int dmx_size = led_dmx_size + disco_dmx_size;
@@ -391,7 +391,7 @@ void LightsTaskcode(void *pvParameters)
   // Time spent in the main loop
   int loopTime = 0;
 
-  active_states[MODE] = 10;
+  // active_states[MODE] = 10;
 
   // another option to have a timed loop is to use vTaskDelayUntil(), have to look into it first
   for (;;)
@@ -415,7 +415,7 @@ void LightsTaskcode(void *pvParameters)
       setColor();
 
       // set BPM
-      active_states[BPM] = 200;
+      // active_states[BPM] = 200;
       LED.setBPM(active_states[BPM]);
 
       // set mode
@@ -504,6 +504,9 @@ void ControllerTaskcode(void *pvParameters)
         // do something?
       }
     }
+
+    discostates[0] = 100;
+    esp_err_t send_status = esp_now_send(0, (uint8_t *) &discostates, disco_dmx_size);
     
     // sync DMX states to
     sync_states();
