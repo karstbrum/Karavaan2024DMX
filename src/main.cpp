@@ -316,13 +316,21 @@ void setmode(){
 
     case 6: {
       // use clusters of a pole of a full letter
-      bool clusters1[] = {1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 
+      bool clusters1_opt1[] = {1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 
                           1, 0, 0, 1, 1, 0, 0, 0, 1, 0, 1, 1, 0, 1, 0, 0, 1, 1, 0};
-      bool clusters2[] = {0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1,
+      bool clusters2_opt1[] = {0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1,
                           0, 1, 1, 0, 0, 1, 1, 1, 0, 1, 0, 0, 1, 0, 1, 1, 0, 0, 1};
+      bool clusters1_opt2[] = {0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 
+                          1, 1, 1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0};
+      bool clusters2_opt2[] = {1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0,
+                          0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1};
       float fadetime = mapValue(0, 255, 0, 5, active_states[DIMMER]); 
       float on_time = mapValue(0, 255, 0.2, 0.5, active_states[EXTRA1]);
-      LED.alternateClusters(clusters1, clusters2, fadetime, on_time);
+      if (active_states[EXTRA2] < 128){
+        LED.alternateClusters(clusters1_opt1, clusters2_opt1, fadetime, on_time);
+      } else {
+        LED.alternateClusters(clusters1_opt2, clusters2_opt2, fadetime, on_time);
+      }
       break;
       }
 
