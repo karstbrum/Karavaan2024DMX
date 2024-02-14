@@ -12,7 +12,7 @@
 #include <algorithm>
 
 // shows pulsating pixels based on the bpm. inverse can turn it around and show a different color
-void Pixels::heartbeat(float line_size, float fadetime, bool inverse) {
+void Pixels::heartbeat(float line_size, float fadetime, bool inverse, float pulse_time) {
 
     // set sample time
     float Ts_ = Ts;
@@ -29,8 +29,13 @@ void Pixels::heartbeat(float line_size, float fadetime, bool inverse) {
     float y = 0;
 
     // define range to check
-    float y_min = y-line_size * pulseIndex;
-    float y_max = y+line_size * pulseIndex;
+    // use quarter of sine to start with a steep ramp and end slow
+    float pulseIndex_aux = sin(1/pulse_time*PI*pulseIndex);
+    pulseIndex_aux = pulseIndex > pulse_time ? 0 : pulseIndex_aux;
+
+    // set the bounds
+    float y_min = y-line_size * pulseIndex_aux;
+    float y_max = y+line_size * pulseIndex_aux;
 
     // set the fading parameters correct
     Pixels::setAlpha(fadetime);

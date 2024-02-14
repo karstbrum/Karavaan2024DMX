@@ -278,7 +278,14 @@ void setmode(){
       }
 
     case 9: {
-      // add mode
+      // use clusters of a pole of a full letter
+      float fadetime = mapValue(0, 255, 0, 5, active_states[DIMMER]); 
+      float updown_time = mapValue(0, 255, 0.5, 1, active_states[EXTRA1]);
+      float phase = mapValue(0, 255, -0.1, 0.1, active_states[EXTRA2]);
+      float line_width = 0.3;
+      float y_range[] = {-0.5, 0.5};
+      LED.updownPositionBased(updown_time, fadetime, phase, line_width, y_range);
+      break;
       }
 
     case 10: {
@@ -295,6 +302,15 @@ void setmode(){
       break; 
       }
 
+    case 11: {
+      float fadetime = mapValue(0, 255, 0, 5, active_states[DIMMER]);
+      float line_size = 0.3;
+      bool inverse = active_states[EXTRA2] < 128 ? true : false;
+      float pulse_time = 1-mapValue(0, 255, 0, 0.75, active_states[EXTRA1]);
+      LED.heartbeat(line_size, fadetime, inverse, pulse_time);
+      break;
+      }
+      
     }
 }
 
