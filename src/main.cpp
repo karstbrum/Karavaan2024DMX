@@ -5,8 +5,9 @@
 
 // other libraries
 #include "esp_dmx.h"
-#include <WiFi.h>
-#include <esp_now.h>
+#include<WiFi.h>
+#include<esp_wifi.h>
+#include<esp_now.h>
 
 // Sampling time (Ts)
 #define Ts 12
@@ -32,6 +33,7 @@ const int rts_pin = 21;
 // communication to discoball
 // address to send data to: A8:42:E3:8D:B8:04 
 uint8_t disco_address[] = {0xA8, 0x42, 0xE3, 0x8D, 0xB8, 0x04};
+uint8_t newMACAddress[] = {0xA8, 0x42, 0xE3, 0x8D, 0xB8, 0x05};
 
 // led states (dmx)
 uint8_t LEDstates[dmx_size];
@@ -392,13 +394,11 @@ void LightsTaskcode(void *pvParameters)
   // Time spent in the main loop
   int loopTime = 0;
 
-  // active_states[MODE] = 10;
+  // active_states[MODE] = 2;
 
   // another option to have a timed loop is to use vTaskDelayUntil(), have to look into it first
   for (;;)
   {
-
-    // active_states[MODE] = 1;
 
     if (millis() - loopTime >= Ts)
     {
@@ -416,7 +416,6 @@ void LightsTaskcode(void *pvParameters)
       setColor();
 
       // set BPM
-      // active_states[BPM] = 200;
       LED.setBPM(active_states[BPM]);
 
       // set mode
@@ -435,6 +434,14 @@ void ControllerTaskcode(void *pvParameters)
 
   // Set device as a Wi-Fi Station
   WiFi.mode(WIFI_STA);
+
+  // set mac address
+  esp_wifi_set_mac(WIFI_IF_STA, &newMACAddress[0]);
+
+  // print the mac address
+  Serial.println(WiFi.macAddress());
+
+  // disconnect wifi
   WiFi.disconnect();
 
   // init esp_now
