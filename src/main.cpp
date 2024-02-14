@@ -376,6 +376,13 @@ void setmode(){
       break; 
       }
 
+    case 11: {
+      float fadetime = mapValue(0, 255, 0, 5, active_states[DIMMER]);
+      float line_size = mapValue(0, 255, 0.5, 0.5, active_states[EXTRA1]);
+      bool inverse = active_states[EXTRA2] < 128 ? true : false;
+      LED.heartbeat(line_size, fadetime, inverse);
+      break;
+      }
     }
 }
 
