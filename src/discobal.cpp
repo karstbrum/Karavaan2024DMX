@@ -60,7 +60,7 @@ Pixels LED(numSides, LEDsPerSide, numPins, sidesPerPin, LEDPins, Ts);
 uint8_t motor_pin = 32;
 
 // level to turn motor on
-uint8_t motor_on_level = 140;
+uint8_t motor_on_level = 100;
 
 // pointers to objects
 Pixels* LED_pointer = &LED;
@@ -207,9 +207,11 @@ void setmode(){
       // between 0 and 0.99
       float fadetime = mapValue(0, 255, 0, 5, active_states[DIMMER]);
       // flash chance between 5 and 75 %
-      uint8_t flash_chance = (uint8_t)mapValue(0, 255, 5, 50, active_states[EXTRA2]);
-      LED.flashingPixels(0, flash_chance, fadetime);
-      break; }
+      uint8_t flash_chance = (uint8_t)mapValue(0, 255, 5, 50, active_states[EXTRA1]);
+      uint8_t num_colors = (uint8_t)mapValue(0, 255, 1, 3, active_states[EXTRA2]);
+      LED.flashingPixels(0, flash_chance, fadetime, num_colors);
+      break; 
+      }
 
     case 3: {// 
       float width_angle = 2.0f*PI/100.0f;
@@ -286,7 +288,7 @@ void setmode(){
       // between 0 and 5
       float fadetime = mapValue(0, 255, 0, 5, active_states[DIMMER]);
       // between 1 and 4
-      uint8_t num_pixels = (uint8_t)mapValue(0, 255, 2, 10, active_states[EXTRA1]);
+      uint8_t num_pixels = (uint8_t)mapValue(0, 255, 1, 10, active_states[EXTRA1]);
       int direction = active_states[EXTRA2] < 128 ? 1 : -1;
       float bandwidth = 1;
       LED.movingPixel(0, num_clusters, clusters, direction, fadetime, num_pixels, bandwidth);

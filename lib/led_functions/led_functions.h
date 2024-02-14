@@ -54,7 +54,7 @@ class Pixels {
         void strobo(uint8_t colorIndex, uint8_t numClusters_ = 0, uint8_t clusters_[MAXSIDES_L] = {}, float ramptime = 0.1, float on_time = 1, float on_chance = 1, float fadetime = 0);
         void moveClockwise(uint8_t numClusters_ = 0, uint8_t clusters_[MAXSIDES_L] = {}, uint8_t cluster_order_[MAXSIDES_L] = {}, int direction = 1, float fadetime = 0.1);
         void movingPixel(uint8_t colorIndex, uint8_t numClusters_, uint8_t clusters_[], int direction = 1, float fadetime = 0, uint8_t num_pixels = 1, float pixelband = 1);
-        void flashingPixels(uint8_t colorIndex, uint8_t flash_chance, float fadetime = 0);
+        void flashingPixels(uint8_t colorIndex, uint8_t flash_chance, float fadetime = 0, uint8_t num_colors = 1);
         void blockParty(uint8_t numClusters_ = 0, uint8_t clusters_[MAXSIDES_L] = {}, uint8_t cluster_order_[MAXSIDES_L] = {}, float fadetime = 0.1);
         void alternateClusters(bool clustergroup1[MAXSIDES_L], bool clustergroup2[MAXSIDES_L], float fadetime = 0, float on_time = 0.5);
 
@@ -109,6 +109,7 @@ class Pixels {
 
         // on_time / flash_time, used for flashingPixels.cpp
         bool flash_on[MAXNUMPIXELS] = {};
+        uint8_t pixelcolor[MAXNUMPIXELS] = {};
 
         // number of clusters to turn on - used for strobo.cpp
         uint8_t number_on = 0;

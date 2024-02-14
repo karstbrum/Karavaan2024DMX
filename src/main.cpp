@@ -276,8 +276,9 @@ void setmode(){
       // between 0 and 0.99
       float fadetime = mapValue(0, 255, 0, 5, active_states[DIMMER]);
       // flash chance between 5 and 75 %
-      uint8_t flash_chance = (uint8_t)mapValue(0, 255, 5, 50, active_states[EXTRA2]);
-      LED.flashingPixels(0, flash_chance, fadetime);
+      uint8_t flash_chance = (uint8_t)mapValue(0, 255, 5, 50, active_states[EXTRA1]);
+      uint8_t num_colors = (uint8_t)mapValue(0, 255, 1, 3, active_states[EXTRA2]);
+      LED.flashingPixels(0, flash_chance, fadetime, num_colors);
       break; 
       }
 
