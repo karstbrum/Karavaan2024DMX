@@ -52,7 +52,7 @@ class Pixels {
 
         // functions based on individual leds or clusters
         void strobo(uint8_t colorIndex, uint8_t numClusters_ = 0, uint8_t clusters_[MAXSIDES_L] = {}, float ramptime = 0.1, float on_time = 1, float on_chance = 1, float fadetime = 0);
-        void moveClockwise(uint8_t numClusters_ = 0, uint8_t clusters_[MAXSIDES_L] = {}, uint8_t cluster_order_[MAXSIDES_L] = {}, int direction = 1, float fadetime = 0.1);
+        void moveClockwise(uint8_t numClusters_ = 0, uint8_t clusters_[MAXSIDES_L] = {}, uint8_t cluster_order_[MAXSIDES_L] = {}, int direction = 1, float fadetime = 0.1, float cluter_length = 1);
         void movingPixel(uint8_t colorIndex, uint8_t numClusters_, uint8_t clusters_[], int direction = 1, float fadetime = 0, uint8_t num_pixels = 1, float pixelband = 1);
         void flashingPixels(uint8_t colorIndex, uint8_t flash_chance, float fadetime = 0, uint8_t num_colors = 1);
         void blockParty(uint8_t numClusters_ = 0, uint8_t clusters_[MAXSIDES_L] = {}, uint8_t cluster_order_[MAXSIDES_L] = {}, float fadetime = 0.1);
@@ -124,6 +124,9 @@ class Pixels {
         // current and previous positions, used for movingPixel.cpp
         float pos_array_prev[50]; 
         float pos_array[50]; 
+
+        // cluster counter, used in movingClockwise.cpp
+        uint8_t cluster_counter = 0;
 
         // RGBW class (self made)
         RGBW* strip;

@@ -13,8 +13,10 @@
 #include <unordered_map>
 
 // clusters turn on in a clockwise direction
-void Pixels::moveClockwise(uint8_t numClusters, uint8_t clusters[], uint8_t cluster_order[], int direction, float fadetime) {
+void Pixels::moveClockwise(uint8_t numClusters, uint8_t clusters[], uint8_t cluster_order[], int direction, float fadetime, float cluster_length) {
     // define clusters
+
+    // cluster_length: relative number of clusters that are switched in order before selecting a random start position
 
     uint8_t pixelsPerCluster[MAXSIDES_L];
     uint8_t sideIndex = 0;
@@ -39,8 +41,21 @@ void Pixels::moveClockwise(uint8_t numClusters, uint8_t clusters[], uint8_t clus
             clusterIndex < numClusters - 1 ? clusterIndex += 1 : clusterIndex = 0;
         } else {
             clusterIndex > 0 ? clusterIndex -= 1 : clusterIndex = numClusters - 1;
+        }
+
+        // increment on cluster_counter
+        cluster_counter += 1;
+
+        if (cluster_length < 1 && static_cast<float>(numClusters)*cluster_length <= cluster_counter){
+
+            // reset the cluster counter
+            cluster_counter = 0;
+
+            // select a random start cluster within defined range
+            clusterIndex = rand() % numClusters;
 
         }
+
     }
 
     // turn on lights per cluster
