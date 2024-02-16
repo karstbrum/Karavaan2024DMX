@@ -1,6 +1,6 @@
-# DMX-Controlled LED Strips with 10 Effects
+# DMX-Controlled LED Strips with 11 Effects
 
-Welcome to the DMX-Controlled LED Strips project! This project allows you to control LED strips using DMX input, providing an immersive lighting experience with 10 exciting effects.
+Welcome to the DMX-Controlled LED Strips project! This project allows you to control LED strips using DMX input, providing an immersive lighting experience with 11 exciting effects.
 
 ## Effects List
 
