@@ -199,7 +199,8 @@ void setmode(){
       uint8_t num_clusters = sizeof(clusters)/sizeof(uint8_t);
       float fade_time = mapValue(0, 255, 0, 5, active_states[DIMMER]);
       int direction = active_states[EXTRA1] < 128 ? 1 : -1;
-      LED.moveClockwise(num_clusters, clusters, cluster_order, direction, fade_time);
+      float cluster_length = 1 - mapValue(0, 255, 0, 1, active_states[EXTRA2]);
+      LED.moveClockwise(num_clusters, clusters, cluster_order, direction, fade_time, cluster_length);
       break; 
       }
 
@@ -336,10 +337,9 @@ void LightsTaskcode( void * pvParameters ){
   // reset for stability
   LED.resetPixels();
 
-  // active_states[MODE] = 10;
-
   // another option to have a timed loop is to use vTaskDelayUntil(), have to look into it first
   for(;;){
+
     if(millis()-loopTime >= Ts){
 
       loopTime = millis();
@@ -357,7 +357,6 @@ void LightsTaskcode( void * pvParameters ){
       setColor();
 
       // set BPM
-      // active_states[BPM] = 30;
       LED.setBPM(active_states[BPM]);
 
       // set mode
