@@ -6,13 +6,14 @@
 
 #include "led_functions.h"
 #include <cmath>
-#include <cstdlib> 
+#include <cstdlib>
 #include <ctime>
 #include <random>
 #include <algorithm>
 
 // One of more traveling LEDs/pixels over the whole range, or per cluster
-void Pixels::movingBlock(float block_size, float fadetime, float move_width, float y_range[]) {
+void Pixels::movingBlock(float block_size, float fadetime, float move_width, float y_range[])
+{
 
     // direction: clockwise of anti clockwise (1 or -1)
     // fadetime: can be any positive number which determines the time the LEDs dim to 5% of the original value
@@ -25,7 +26,8 @@ void Pixels::movingBlock(float block_size, float fadetime, float move_width, flo
     pulseIndex += (Ts_ / 1000) * (BPM / 60) / freqdiv; // Ts*BPS (s^1 * s^-1)
 
     // if pulseindex exceeds 1, select the cluster to light up
-    if (pulseIndex > 1) {
+    if (pulseIndex > 1)
+    {
 
         // depending on direction, either do + or - 1
         pulseIndex -= 1;
@@ -37,46 +39,46 @@ void Pixels::movingBlock(float block_size, float fadetime, float move_width, flo
         // define a new random number for y_end
         randnum = rand() % 100;
         yb_end = mapValue(0, 99, y_range[0], y_range[1], randnum);
-        
+
         // select random move direction
-        move_direction = (rand() % 2)*2 - 1;
+        move_direction = (rand() % 2) * 2 - 1;
     }
 
     // define current positions
-    float x = static_cast<float>(move_direction) * (-move_width/2 + pulseIndex*move_width);
-    float y = yb_start + (yb_end - yb_start)*pulseIndex;
+    float x = static_cast<float>(move_direction) * (-move_width / 2 + pulseIndex * move_width);
+    float y = yb_start + (yb_end - yb_start) * pulseIndex;
 
     // define range to check
-    float x_min = x-block_size/2;
-    float x_max = x+block_size/2;
-    float y_min = y-block_size/2;
-    float y_max = y+block_size/2;
+    float x_min = x - block_size / 2;
+    float x_max = x + block_size / 2;
+    float y_min = y - block_size / 2;
+    float y_max = y + block_size / 2;
 
     // printf("xmin: %.3f, xmax: %.3f, ymin: %.3f, ymas: %.3f\n", x_min, x_max, y_min, y_max);
 
     // set the fading parameters correct
     Pixels::setAlpha(fadetime);
 
-    // // loop through all pixels 
-    for (uint16_t i_pixel = 0; i_pixel < totalPixels; i_pixel++) {
+    // // loop through all pixels
+    for (uint16_t i_pixel = 0; i_pixel < totalPixels; i_pixel++)
+    {
 
         // check conditions
         // only check if the block is inside the square
         // if inside, input = 1, else input = 0
 
-        if (pixel_pos[XPOS][i_pixel] > x_min && pixel_pos[XPOS][i_pixel] < x_max && 
-            pixel_pos[YPOS][i_pixel] > y_min && pixel_pos[YPOS][i_pixel] < y_max){
-                
-            //pixel on
+        if (pixel_pos[XPOS][i_pixel] > x_min && pixel_pos[XPOS][i_pixel] < x_max &&
+            pixel_pos[YPOS][i_pixel] > y_min && pixel_pos[YPOS][i_pixel] < y_max)
+        {
+
+            // pixel on
             setDimmedRange(i_pixel, i_pixel, 0, 1);
-
-        } else {
-
-            //pixel off
-            setDimmedRange(i_pixel, i_pixel, 0, 0);
-
         }
+        else
+        {
 
+            // pixel off
+            setDimmedRange(i_pixel, i_pixel, 0, 0);
+        }
     }
-    
 }
