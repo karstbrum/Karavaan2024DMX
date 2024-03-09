@@ -6,13 +6,14 @@
 
 #include "led_functions.h"
 #include <cmath>
-#include <cstdlib> 
+#include <cstdlib>
 #include <ctime>
 #include <random>
 #include <algorithm>
 
 // shows pulsating pixels based on the bpm. inverse can turn it around and show a different color
-void Pixels::heartbeat(float line_size, float fadetime, bool inverse, float pulse_time) {
+void Pixels::heartbeat(float line_size, float fadetime, bool inverse, float pulse_time)
+{
 
     // set sample time
     float Ts_ = Ts;
@@ -21,7 +22,8 @@ void Pixels::heartbeat(float line_size, float fadetime, bool inverse, float puls
     pulseIndex += (Ts_ / 1000) * (BPM / 60) / freqdiv; // Ts*BPS (s^1 * s^-1)
 
     // if pulseindex exceeds 1, select the cluster to light up
-    if (pulseIndex > 1) {
+    if (pulseIndex > 1)
+    {
         pulseIndex -= 1;
     }
 
@@ -30,35 +32,44 @@ void Pixels::heartbeat(float line_size, float fadetime, bool inverse, float puls
 
     // define range to check
     // use quarter of sine to start with a steep ramp and end slow
-    float pulseIndex_aux = sin(1/pulse_time*PI*pulseIndex);
+    float pulseIndex_aux = sin(1 / pulse_time * PI * pulseIndex);
     pulseIndex_aux = pulseIndex > pulse_time ? 0 : pulseIndex_aux;
 
     // set the bounds
-    float y_min = y-line_size * pulseIndex_aux;
-    float y_max = y+line_size * pulseIndex_aux;
+    float y_min = y - line_size * pulseIndex_aux;
+    float y_max = y + line_size * pulseIndex_aux;
 
     // set the fading parameters correct
     Pixels::setAlpha(fadetime);
 
-    // // loop through all pixels 
-    for (uint16_t i_pixel = 0; i_pixel < totalPixels; i_pixel++) {
-        if (inverse) {
-            if (pixel_pos[YPOS][i_pixel] > y_min && pixel_pos[YPOS][i_pixel] < y_max){
-                //pixel on
+    // // loop through all pixels
+    for (uint16_t i_pixel = 0; i_pixel < totalPixels; i_pixel++)
+    {
+        if (inverse)
+        {
+            if (pixel_pos[YPOS][i_pixel] > y_min && pixel_pos[YPOS][i_pixel] < y_max)
+            {
+                // pixel on
                 setDimmedRange(i_pixel, i_pixel, 0, 1);
-            } else {
-                //pixel off
+            }
+            else
+            {
+                // pixel off
                 setDimmedRange(i_pixel, i_pixel, 0, 0);
             }
-        } else {
-            if (pixel_pos[YPOS][i_pixel] > y_min && pixel_pos[YPOS][i_pixel] < y_max){
-                //pixel off
+        }
+        else
+        {
+            if (pixel_pos[YPOS][i_pixel] > y_min && pixel_pos[YPOS][i_pixel] < y_max)
+            {
+                // pixel off
                 setDimmedRange(i_pixel, i_pixel, 1, 0);
-            } else {
-                //pixel on
+            }
+            else
+            {
+                // pixel on
                 setDimmedRange(i_pixel, i_pixel, 1, 1);
             }
         }
     }
-    
 }
