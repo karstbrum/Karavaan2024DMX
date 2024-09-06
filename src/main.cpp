@@ -10,7 +10,7 @@
 #include <esp_now.h>
 
 // Sampling time (Ts)
-#define Ts 12
+#define Ts 15
 
 // max numbers for settings
 #define MAXCOLORS 10
@@ -31,8 +31,8 @@ const int rx_pin = 16;
 const int rts_pin = 21;
 
 // communication to discoball
-// address to send data to: A8:42:E3:8D:B8:04
-uint8_t disco_address[] = {0xA8, 0x42, 0xE3, 0x8D, 0xB8, 0x04};
+// address to send data to: A8:42:E3:8D:B8:01
+uint8_t disco_address[] = {0xA8, 0x42, 0xE3, 0x8D, 0xB8, 0x01};
 uint8_t newMACAddress[] = {0xA8, 0x42, 0xE3, 0x8D, 0xB8, 0x05};
 
 // led states (dmx)
@@ -151,6 +151,9 @@ void sync_states()
       discostates[i * 8 + j] = dmx_data[i * 16 + j + 8 + 1];
     }
   }
+
+  //printf("z: %i, phi: %i, psi: %i\n", discostates[0], discostates[1], discostates[2]);
+
 }
 
 // select the correct mode and values
@@ -439,9 +442,12 @@ void LightsTaskcode(void *pvParameters)
       select_mode();
 
       // set dimmer value (should be between 0 and 1)
+      active_states[DIM] = 100;
+      active_states[BPM] = 50;
       LED.setDimmer((static_cast<float>(active_states[DIM])) / 255);
 
       // set color
+      active_states[RED] = 200;
       setColor();
 
       // set BPM

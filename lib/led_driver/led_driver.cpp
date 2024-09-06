@@ -163,14 +163,27 @@ void RGBW::setStrip()
         for (uint16_t l = 0; l < LEDsPerPin[k]; l++)
         { // For each pixel in strip.
             // set the colors individually for the LED library
+            printf("%i, ",RGBWStates[pixelIndex][2]);
             strands[k]->pixels[l].w = RGBWStates[pixelIndex][0];
             strands[k]->pixels[l].r = RGBWStates[pixelIndex][1];
             strands[k]->pixels[l].g = RGBWStates[pixelIndex][2];
             strands[k]->pixels[l].b = RGBWStates[pixelIndex][3];
             pixelIndex += 1;
+            
         }
     }
+    printf("\n");
 
     // set the colors of all strands
     digitalLeds_drawPixels(strands, numPins);
+
+    // for simulation purpose
+    // print all r g b w states '
+    // printf("b");
+    // for(uint16_t i_pixel = 0; i_pixel < numLEDs; i_pixel++)
+    // {
+    //     printf("%i,%i,%i,%i;", RGBWStates[i_pixel][0], RGBWStates[i_pixel][1], RGBWStates[i_pixel][2], RGBWStates[i_pixel][3]);
+    // }
+    // printf("\n");
+
 };

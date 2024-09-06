@@ -12,7 +12,7 @@
 #define Ts 15
 
 // set mac adress (=needed when switching esp boards)
-uint8_t newMACAddress[] = {0xA8, 0x42, 0xE3, 0x8D, 0xB8, 0x04};
+uint8_t newMACAddress[] = {0xA8, 0x42, 0xE3, 0x8D, 0xB8, 0x02};
 
 // discoball states
 const uint8_t disco_dmx_size = 96;
@@ -373,6 +373,11 @@ void LightsTaskcode(void *pvParameters)
 
       // select the correct mode
       select_mode();
+
+      active_states[MODE] = 0;
+      active_states[DIM] = 100;
+      active_states[BPM] = 60;
+      active_states[RED] = 100;
 
       // set the motor
       setmotor();
