@@ -14,21 +14,37 @@
 // set mac adress (=needed when switching esp boards)
 uint8_t newMACAddress[] = {0xA8, 0x42, 0xE3, 0x8D, 0xB8, 0x02};
 
-// discoball states
-const uint8_t disco_dmx_size = 96;
-uint8_t discostates[disco_dmx_size];
+// number of modes
+const int num_modes = 12; // to be defined
+const float mode_selector = ceil(256.0 / num_modes);
+
+// scanner number
+const int scanner_number = 1;
+const int scanner_number_motor = 2;
+
+// DMX size (number of addresses)c
+const int num_used_scanners = 6;
+const int channels_per_scanner = 16;
+
+const int dmx_size_used = num_used_scanners*channels_per_scanner;
+
+// used states (numbers of channels + boolean on used scanner)
+uint8_t used_states[dmx_size_used];
 
 // define active states (are used by the lights)
-const uint8_t BPM = 0;
-const uint8_t DIM = 1;
-const uint8_t RED = 2;
-const uint8_t GREEN = 3;
-const uint8_t BLUE = 4;
-const uint8_t DIMMER = 5;
-const uint8_t EXTRA1 = 6;
-const uint8_t EXTRA2 = 7;
-const uint8_t MODE = 8;
-uint8_t active_states[9];
+const uint8_t MODE = 0;
+const uint8_t BPM = 1;
+const uint8_t DIM = 2;
+const uint8_t DIMMER = 4;
+const uint8_t RED = 5;
+const uint8_t GREEN = 6;
+const uint8_t BLUE = 7;
+const uint8_t EXTRA1 = 8;
+const uint8_t EXTRA2 = 9;
+uint8_t active_states[channels_per_scanner];
+
+// check if motor should be on
+bool motor_on;
 
 // define tasks (multicore)
 TaskHandle_t LEDTask;
@@ -73,68 +89,47 @@ void OnDataRecv(const uint8_t *mac_addr, const uint8_t *incomingData, int len)
 {
 
   // map data to discostates
-  for (int i = 0; i < disco_dmx_size; i++)
+  for (int i = 0; i < dmx_size_used; i++)
   {
-    discostates[i] = incomingData[i];
+    used_states[i] = incomingData[i];
   }
 }
 
-// select the correct mode and values
-// first active mode is selected by default
-void select_mode()
+void set_states()
 {
 
-  // bool for finding a non-zero state
-  bool state_found = false;
-
-  // loop through sets of 8 and check for non zero entry
-  for (int i = 0; i < disco_dmx_size / 8; i++)
+  // reset counter on mode
+  if (active_states[MODE] != static_cast<uint8_t>(floor(used_states[MODE]/mode_selector)))
   {
-    // loop through state of the mode
-    for (int j = 0; j < 8; j++)
-    {
-      if (discostates[i * 8 + j] > 0)
-      {
-        // mode found at nonzero state
-        state_found = true;
-
-        // break this loop
-        break;
-      }
-    }
-    // break loop if state is found, needed for later
-    if (state_found)
-    {
-      // set the mode
-      active_states[MODE] = i;
-
-      break;
-    }
+    LED.resetCounters();
   }
 
-  // if state found set all states
-  if (state_found)
+  // copy the first channels_per_scanner used_states to active_states
+  for(int i = 0; i < channels_per_scanner; i++)
   {
-    for (int j = 0; j < 8; j++)
-    {
-      // set the values
-      active_states[j] = discostates[active_states[MODE] * 8 + j];
-    }
+    active_states[i] = used_states[i];
+  }
+
+  // use first state te select the 
+  active_states[MODE] = static_cast<uint8_t>(floor(used_states[MODE]/mode_selector));
+
+  if(used_states[channels_per_scanner + scanner_number] == 0)
+  {
+    active_states[DIM] = 0;
+  }
+
+  if(used_states[channels_per_scanner + scanner_number_motor] == 1)
+  {
+    motor_on = true;
   }
   else
   {
-    for (int j = 0; j < 8; j++)
-    {
-      // set the values
-      active_states[j] = 0;
-    }
+    motor_on = false;
   }
-}
 
-void set_constraint()
-{
   // set a BPM of at least 1
   active_states[BPM] = active_states[BPM] > 1 ? active_states[BPM] : 1;
+
 }
 
 void setColor()
@@ -283,11 +278,6 @@ void setmode()
 
   case 7:
   {
-    // do nothing.. the button is broken
-  }
-
-  case 8:
-  {
     // use clusters of a pole of a full letter
     float linewidth = 0.05;
     float fadetime = mapValue(0, 255, 0, 5, active_states[DIMMER]);
@@ -297,7 +287,7 @@ void setmode()
     break;
   }
 
-  case 9:
+  case 8:
   {
     // use clusters of a pole of a full letter
     float fadetime = mapValue(0, 255, 0, 5, active_states[DIMMER]);
@@ -309,7 +299,7 @@ void setmode()
     break;
   }
 
-  case 10:
+  case 9:
   {
     // use clusters of a pole of a full letter
     uint8_t clusters[] = {8};
@@ -324,7 +314,7 @@ void setmode()
     break;
   }
 
-  case 11:
+  case 10:
   {
     float fadetime = mapValue(0, 255, 0, 5, active_states[DIMMER]);
     float line_size = 0.5;
@@ -333,13 +323,22 @@ void setmode()
     LED.heartbeat(line_size, fadetime, inverse, pulse_time);
     break;
   }
+
+  case 11:
+  {
+    float blend_level = mapValue(0, 255, 0, 1, active_states[EXTRA1]);
+    int direction = active_states[EXTRA2] < 128 ? 1 : -1;
+    LED.rainbow(blend_level, direction);
+    break;
+  }
+
   }
 }
 
 void setmotor()
 {
   // if motor level is equal or greater than motor_on_level, turn motor on
-  if (active_states[DIM] >= motor_on_level)
+  if (motor_on)
   {
     digitalWrite(motor_pin, HIGH);
   }
@@ -372,12 +371,7 @@ void LightsTaskcode(void *pvParameters)
       loopTime = millis();
 
       // select the correct mode
-      select_mode();
-
-      active_states[MODE] = 0;
-      active_states[DIM] = 100;
-      active_states[BPM] = 60;
-      active_states[RED] = 100;
+      set_states();
 
       // set the motor
       setmotor();
