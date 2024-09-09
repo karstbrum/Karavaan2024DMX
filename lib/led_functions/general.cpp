@@ -232,6 +232,14 @@ void Pixels::setDimmedRange(uint16_t index_start, uint16_t index_end, uint8_t co
     }
 }
 
+void Pixels::resetCounters()
+{
+    // just reset all the counters
+    pulseIndex = 0;
+    prev_pulseIndex = 0;
+    extra_pulseIndex = 0;
+}
+
 // define general function
 // map to new range
 float mapValue(float old_min, float old_max, float new_min, float new_max, float value)

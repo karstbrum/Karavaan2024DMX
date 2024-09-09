@@ -14,45 +14,64 @@
 
 // max numbers for settings
 #define MAXCOLORS 10
-#define MAXMODES 16 // to be defined
+
+// communication to discoball
+// address to send data to: A8:42:E3:8D:B8:01
+uint8_t send_to_address[] = {0xA8, 0x42, 0xE3, 0x8D, 0xB8, 0x01};
+uint8_t newMACAddress[] = {0xA8, 0x42, 0xE3, 0x8D, 0xB8, 0x05};
+
+// number of modes
+const int num_modes = 12; // to be defined
+const float mode_selector = ceil(256.0 / num_modes);
+
+// scanner number
+const int scanner_number = 0;
 
 // setup DMX port and pins
 const dmx_port_t dmx_num = DMX_NUM_2;
 // DMX start address
 const int dmx_start_addr = 0;
-// number of states for LED and discoball
-const int led_dmx_size = 96; // muliples of 8
-const int disco_dmx_size = led_dmx_size;
-// DMX size (number of addresses)
-const int dmx_size = led_dmx_size + disco_dmx_size;
+// DMX size (number of addresses)c
+const int num_used_scanners = 6;
+const int num_total_scanners = 12;
+const int channels_per_scanner = 16;
+
+// scanner to use for checking states
+const int state_scanner = 11; // 12
+
+// used dmx channels (except for scanner 12)
+const int dmx_size_total = num_total_scanners*channels_per_scanner;
+const int dmx_size_used = num_used_scanners*channels_per_scanner;
+
+// define dmx received data
+uint8_t dmx_data[dmx_size_total + 1];
+uint8_t received_states[dmx_size_total][4];
+
+// used states (numbers of channels + boolean on used scanner)
+uint8_t used_states[channels_per_scanner + num_used_scanners];
+
 // DMX pins (UART)
 const int tx_pin = 17;
 const int rx_pin = 16;
 const int rts_pin = 21;
 
-// communication to discoball
-// address to send data to: A8:42:E3:8D:B8:01
-uint8_t disco_address[] = {0xA8, 0x42, 0xE3, 0x8D, 0xB8, 0x01};
-uint8_t newMACAddress[] = {0xA8, 0x42, 0xE3, 0x8D, 0xB8, 0x05};
-
-// led states (dmx)
-uint8_t LEDstates[dmx_size];
-// discoball states (dmx)
-uint8_t discostates[dmx_size];
-// define dmx received data
-uint8_t dmx_data[dmx_size + 1];
-
 // define active states (are used by the lights)
-const uint8_t BPM = 0;
-const uint8_t DIM = 1;
-const uint8_t RED = 2;
-const uint8_t GREEN = 3;
-const uint8_t BLUE = 4;
-const uint8_t DIMMER = 5;
-const uint8_t EXTRA1 = 6;
-const uint8_t EXTRA2 = 7;
-const uint8_t MODE = 8;
-uint8_t active_states[9];
+const uint8_t MODE = 0;
+const uint8_t BPM = 1;
+const uint8_t DIM = 2;
+const uint8_t DIMMER = 4;
+const uint8_t RED = 5;
+const uint8_t GREEN = 6;
+const uint8_t BLUE = 7;
+const uint8_t EXTRA1 = 8;
+const uint8_t EXTRA2 = 9;
+uint8_t active_states[16];
+
+// previous mode for non direct switching
+// time should be on same mode (in ms)
+const float mode_change_time = 1000.0;
+float start_time_mode; 
+uint8_t new_mode;
 
 // set up the different cores
 TaskHandle_t ControllerTask;
@@ -136,82 +155,84 @@ Pixels LED(numSides, LEDsPerSide, numPins, sidesPerPin, LEDPins, Ts);
 // the LED positions are defined in the setup loop
 // can only declare variables in global space
 
-// sync states with DMX controller if input changed
-void sync_states()
+void process_data()
 {
 
-  // write DMX data to LED states
-  for (int i = 0; i < dmx_size / 16; i++)
-  {
-    for (int j = 0; j < 8; j++)
+    // check the change of the states
+    for (int j = 0; j < channels_per_scanner; j++)
     {
-      // write first 8 states to LEDstates
-      LEDstates[i * 8 + j] = dmx_data[i * 16 + j + 1];
-      // write next 8 states to discostates
-      discostates[i * 8 + j] = dmx_data[i * 16 + j + 8 + 1];
-    }
-  }
+        // shift received states in time
+        received_states[state_scanner * channels_per_scanner + j][3] = received_states[state_scanner * channels_per_scanner + j][2];
+        received_states[state_scanner * channels_per_scanner + j][2] = received_states[state_scanner * channels_per_scanner + j][1];
+        received_states[state_scanner * channels_per_scanner + j][1] = received_states[state_scanner * channels_per_scanner + j][0];
+        // get new received state
+        received_states[state_scanner * channels_per_scanner + j][0] = dmx_data[state_scanner * channels_per_scanner + j + 1];
 
-  //printf("z: %i, phi: %i, psi: %i\n", discostates[0], discostates[1], discostates[2]);
+        int other_side = j < channels_per_scanner/2 ? channels_per_scanner/2 : -channels_per_scanner/2;
+
+        // if (changed 3 times || if changed to different than other side)
+        // && sum of 3 changes > 2
+        int sum_changes = abs(received_states[state_scanner * channels_per_scanner + j][3] - received_states[state_scanner * channels_per_scanner + j][2]) + 
+                          abs(received_states[state_scanner * channels_per_scanner + j][2] - received_states[state_scanner * channels_per_scanner + j][1]) +
+                          abs(received_states[state_scanner * channels_per_scanner + j][1] - received_states[state_scanner * channels_per_scanner + j][0]);
+        if (((received_states[state_scanner * channels_per_scanner + j][3] != received_states[state_scanner * channels_per_scanner + j][2] &&
+              received_states[state_scanner * channels_per_scanner + j][2] != received_states[state_scanner * channels_per_scanner + j][1] &&
+              received_states[state_scanner * channels_per_scanner + j][1] != received_states[state_scanner * channels_per_scanner + j][0]) ||
+             (received_states[state_scanner * channels_per_scanner + j][0] != used_states[j + other_side] &&
+              received_states[state_scanner * channels_per_scanner + j][1] != received_states[state_scanner * channels_per_scanner + j][0])) &&
+              (sum_changes > 2))
+            {
+
+                used_states[j] = received_states[state_scanner * channels_per_scanner + j][0];
+
+            }
+
+    }
+
+    // Loop through all scanners to see which are active
+    for (int i = 0; i < num_used_scanners; i++)
+    {
+        // set to false until value > 0 is found
+        bool scanner_used = false;
+
+        for (int j = 0; j < channels_per_scanner; j++)
+        {
+            scanner_used = scanner_used || dmx_data[i * channels_per_scanner + j + 1] > 0;
+        }
+
+        // set the scanner correct in used states
+        used_states[channels_per_scanner + i] = scanner_used;
+        
+    }
 
 }
 
-// select the correct mode and values
-// first active mode is selected by default
-void select_mode()
+void set_states()
 {
 
-  // bool for finding a non-zero state
-  bool state_found = false;
-
-  // loop through sets of 8 and check for non zero entry
-  for (int i = 0; i < led_dmx_size / 8; i++)
+  // reset counter on mode
+  if (active_states[MODE] != static_cast<uint8_t>(floor(used_states[MODE]/mode_selector)))
   {
-    // loop through state of the mode
-    for (int j = 0; j < 8; j++)
-    {
-      if (LEDstates[i * 8 + j] > 0)
-      {
-        // mode found at nonzero state
-        state_found = true;
-
-        // break this loop
-        break;
-      }
-    }
-    // break loop if state is found, needed for later
-    if (state_found)
-    {
-      // set the mode
-      active_states[MODE] = i;
-
-      break;
-    }
+    LED.resetCounters();
   }
 
-  // if state found set all states
-  if (state_found)
+  // copy the first channels_per_scanner used_states to active_states
+  for(int i = 0; i < channels_per_scanner; i++)
   {
-    for (int j = 0; j < 8; j++)
-    {
-      // set the values
-      active_states[j] = LEDstates[active_states[MODE] * 8 + j];
-    }
+    active_states[i] = used_states[i];
   }
-  else
-  {
-    for (int j = 0; j < 8; j++)
-    {
-      // set the values
-      active_states[j] = 0;
-    }
-  }
-}
 
-void set_constraint()
-{
+  // use first state te select the 
+  active_states[MODE] = static_cast<uint8_t>(floor(static_cast<float>(used_states[MODE])/mode_selector));
+
+  if(used_states[channels_per_scanner + scanner_number] == 0)
+  {
+    active_states[DIM] = 0;
+  }
+
   // set a BPM of at least 1
   active_states[BPM] = active_states[BPM] > 1 ? active_states[BPM] : 1;
+
 }
 
 void setColor()
@@ -361,11 +382,6 @@ void setmode()
 
   case 7:
   {
-    // do nothing.. the button is broken
-  }
-
-  case 8:
-  {
     // use clusters of a pole of a full letter
     float linewidth = 0.05;
     float fadetime = mapValue(0, 255, 0, 5, active_states[DIMMER]);
@@ -375,7 +391,7 @@ void setmode()
     break;
   }
 
-  case 9:
+  case 8:
   {
     // use clusters of a pole of a full letter
     float fadetime = mapValue(0, 255, 0, 5, active_states[DIMMER]);
@@ -387,7 +403,7 @@ void setmode()
     break;
   }
 
-  case 10:
+  case 9:
   {
     // use clusters of a pole of a full letter
     uint8_t clusters[] = {2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 4, 5, 4, 6};
@@ -402,7 +418,7 @@ void setmode()
     break;
   }
 
-  case 11:
+  case 10:
   {
     float fadetime = mapValue(0, 255, 0, 5, active_states[DIMMER]);
     float line_size = 0.3;
@@ -411,6 +427,15 @@ void setmode()
     LED.heartbeat(line_size, fadetime, inverse, pulse_time);
     break;
   }
+
+  case 11:
+  {
+    float blend_level = mapValue(0, 255, 0, 1, active_states[EXTRA1]);
+    int direction = active_states[EXTRA2] < 128 ? 1 : -1;
+    LED.rainbow(blend_level, direction);
+    break;
+  }
+
   }
 }
 
@@ -438,16 +463,13 @@ void LightsTaskcode(void *pvParameters)
       // reset loop time
       loopTime = millis();
 
-      // select the correct mode
-      select_mode();
+      // set the states correctly
+      set_states();
 
       // set dimmer value (should be between 0 and 1)
-      active_states[DIM] = 100;
-      active_states[BPM] = 50;
       LED.setDimmer((static_cast<float>(active_states[DIM])) / 255);
 
       // set color
-      active_states[RED] = 200;
       setColor();
 
       // set BPM
@@ -487,7 +509,7 @@ void ControllerTaskcode(void *pvParameters)
 
   // setup receiver info to channel 0
   esp_now_peer_info_t peerInfo = {};
-  memcpy(peerInfo.peer_addr, disco_address, 6);
+  memcpy(peerInfo.peer_addr, send_to_address, 6);
   peerInfo.channel = 0;
   peerInfo.encrypt = false;
 
@@ -529,11 +551,14 @@ void ControllerTaskcode(void *pvParameters)
 
         // dmx_read(dmx_num, data, packet.size);
         // add 1 to dmx size since first byte = NULL
-        dmx_read_offset(dmx_num, dmx_start_addr, dmx_data, dmx_size + 1);
+        dmx_read_offset(dmx_num, dmx_start_addr, dmx_data, dmx_size_total + 1);
         // Serial.println("data received");
 
+        // process the data
+        process_data();
+
         // send data to discoball (use pointer to discostates array and define length of array)
-        esp_err_t send_status = esp_now_send(0, (uint8_t *)&discostates, disco_dmx_size);
+        esp_err_t send_status = esp_now_send(0, (uint8_t *)&used_states, channels_per_scanner + num_used_scanners);
 
         if (send_status == ESP_ERR_ESPNOW_NOT_FOUND)
         {
@@ -549,16 +574,9 @@ void ControllerTaskcode(void *pvParameters)
       }
     }
 
-    // esp_err_t send_status = esp_now_send(0, (uint8_t *) &discostates, disco_dmx_size);
-
-    // sync DMX states to
-    sync_states();
-
-    // set the constraints, such as minimum BPM
-    set_constraint();
-
     // task delay for stability
     vTaskDelay(1);
+
   }
 }
 
