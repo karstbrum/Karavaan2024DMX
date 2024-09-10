@@ -39,24 +39,27 @@ Welcome to the DMX-Controlled LED Strips project! This project allows you to con
    - Slider 2: on time
    - Slider 3: switch clusters
 
-8. **Nothing (Button Broken)**
-
-9. **Moving Lines**
+8. **Moving Lines**
    - Slider 1: fade time
    - Slider 2: direction
    - Slider 3: number of lines (1 - 4)
 
-10. **Up-Down Position Based**
+9. **Up-Down Position Based**
    - Slider 1: fade time
    - Slider 2: up-down time
    - Slider 3: phase
 
-11. **Moving Pixel**
+10. **Moving Pixel**
     - Slider 1: fade time
     - Slider 2: number of pixels (1 - 10)
     - Slider 3: direction
 
-12. **Heartbeat**
+11. **Heartbeat**
     - Slider 1: fade time
     - Slider 2: pulse time
+    - Slider 3: inverse
+
+11. **RGB**
+    - Slider 1: -
+    - Slider 2: color overlap
     - Slider 3: inverse 
