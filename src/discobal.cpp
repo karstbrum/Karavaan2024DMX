@@ -12,7 +12,7 @@
 #define Ts 15
 
 // set mac adress (=needed when switching esp boards)
-uint8_t newMACAddress[] = {0xA8, 0x42, 0xE3, 0x8D, 0xB8, 0x02};
+uint8_t newMACAddress[] = {0xA8, 0x42, 0xE3, 0x8D, 0xB8, 0x01};
 
 // number of modes
 const int num_modes = 12; // to be defined
