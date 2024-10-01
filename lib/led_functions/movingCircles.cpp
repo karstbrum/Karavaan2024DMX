@@ -62,9 +62,9 @@ void Pixels::movingCircles(uint8_t num_circles, float circle_width, int directio
         // now add the circle width, do not fit to range
         circle_end[i_circle] = circle_start[i_circle] + circle_width;
 
-        printf("start%i: %.2f, end%i: %.2f, ", i_circle, circle_start[i_circle], i_circle, circle_end[i_circle]);
+        // printf("start%i: %.2f, end%i: %.2f, ", i_circle, circle_start[i_circle], i_circle, circle_end[i_circle]);
     }
-    printf("\n");
+    // printf("\n");
 
     // set the fading parameters correct
     Pixels::setAlpha(fadetime);
