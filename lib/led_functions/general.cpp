@@ -212,6 +212,14 @@ void Pixels::definePositions_polar(float a_start[], float a_end[], float l_side[
 
 }
 
+void Pixels::add_sidespace(float x_min_add, float x_pos_add, float y_min_add, float y_pos_add)
+{
+    x_min -= x_min_add;
+    x_max += x_pos_add;
+    x_min -= x_min_add;
+    x_max += x_pos_add;
+};
+
 void Pixels::defineFirstColors()
 {
     strip->addColor(0, 0, 0, 0);

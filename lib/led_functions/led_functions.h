@@ -27,6 +27,8 @@ public:
     // function for defining the positoins of individual LEDs
     void definePositions_carthesian(float x_start[], float y_start[], float x_end[], float y_end[]);
     void definePositions_polar(float a_start[], float a_end[], float l[]);
+    // add whitespace after defining positions only call after definition of coordinates
+    void add_sidespace(float x_min_add, float x_pos_add, float y_min_add, float y_pos_add);
 
     // display current color
     void activateColor();

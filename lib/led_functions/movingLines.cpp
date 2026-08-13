@@ -19,14 +19,14 @@ void Pixels::movingLines(uint8_t number_of_lines, uint8_t direction, float fadet
     // number_of_lines can be anything
 
     // define min and max position based on defined max and x/y direction
-    const float pos_min = y_min;
-    const float pos_max = y_max;
+    float pos_min = y_min;
+    float pos_max = y_max;
     if (direction == 1 || direction == 3)
     {
-        const float pos_min = x_min;
-        const float pos_max = x_max;
+        pos_min = x_min;
+        pos_max = x_max;
     }
-    const float pos_span = pos_max - pos_min;
+    float pos_span = pos_max - pos_min;
 
     // split the combined direction selector into axis + sign
     uint8_t pixel_dir = (direction == 1 || direction == 3) ? XPOS : YPOS;

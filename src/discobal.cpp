@@ -185,7 +185,7 @@ void setmode()
   {
   case 0: // DONE
   { //
-    // use clusters of a pole of a full letter
+    // Cluster are 8 segments on the ring
     uint8_t clusters[] = {1, 1, 1, 1, 1, 1, 1, 1};
     uint8_t num_clusters = sizeof(clusters) / sizeof(uint8_t);
     float ramp_time = 0.02;
@@ -239,35 +239,36 @@ void setmode()
     break;
   }
 
-  case 3:
+  case 3: // DONE
   {
+    // Lines move in carthesion of the ring
     LED.freqdiv = 4;
     float linewidth = 0.05;
     float fadetime = mapValue(0, 255, 0, 5, active_states[DIMMER]);
-    float slider_mapper = mapValue(0, 255, 1, 6, active_states[EXTRA1]);
+    float slider_mapper = mapValue(0, 255, 0.5, 6.49, active_states[EXTRA1]);
     uint8_t number_of_lines = (uint8_t)slider_mapper;
     int direction = floor(slider_mapper) != round(slider_mapper) ? 2 : 4;
     LED.movingLines(number_of_lines, direction, fadetime, linewidth);
     break;
   }
 
-  case 4:
-  { //
+  case 4: // DONE
+  { // rotation with just a single color
     LED.freqdiv = 4;
     float width_angle = 2.0f * PI / 40.0f;
     float fadetime = mapValue(0, 255, 0, 5, active_states[DIMMER]);
-    float slider_mapper = mapValue(0, 255, 1, 6, active_states[EXTRA1]);
-    uint8_t num_lines = (uint8_t)slider_mapper;
+    float slider_mapper = mapValue(0, 255, 0.5, 4.49, active_states[EXTRA1]);
+    uint8_t num_lines = (uint8_t)round(slider_mapper);
     // if floor and round match, positive rotation, otherwise negative rotation
     int direction = floor(slider_mapper) != round(slider_mapper) ? -1 : 1;
     LED.oneColorRotation(num_lines, width_angle, direction, fadetime);
     break;
   }
 
-  case 5:
-  {
+  case 5: // DONE
+  { // rainbow light switching
     float blend_level = mapValue(0, 255, 0, 1, active_states[EXTRA1]);
-    int direction = 1; //active_states[EXTRA2] < 128 ? 1 : -1;
+    int direction = 1; 
     LED.rainbow(blend_level, direction);
     break;
   }
