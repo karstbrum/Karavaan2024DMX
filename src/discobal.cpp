@@ -2,6 +2,7 @@
 
 // own libraries
 #include "led_functions.h"
+#include "web_ui.h"
 
 // communication libraries
 #include <WiFi.h>
@@ -49,6 +50,7 @@ bool motor_on;
 // define tasks (multicore)
 TaskHandle_t LEDTask;
 TaskHandle_t ControllerTask;
+TaskHandle_t WebTask;
 
 // define start angle of first and second strip
 float a1 = PI / 12 * 1;
@@ -79,6 +81,10 @@ uint8_t motor_on_level = 100;
 
 // pointers to objects
 Pixels *LED_pointer = &LED;
+
+// web UI for troubleshooting: plots pixel_pos / live color and can trigger
+// a mode directly, bypassing ESP-NOW/DMX input
+WebUI webUI(LED, "Discobal licht", "karavaan");
 
 // TIME VARIABLES
 // Time spent in the main loop
@@ -177,157 +183,91 @@ void setmode()
   LED.freqdiv = 1;
   switch (active_states[MODE])
   {
-  case 0:
+  case 0: // DONE
   { //
     // use clusters of a pole of a full letter
     uint8_t clusters[] = {1, 1, 1, 1, 1, 1, 1, 1};
     uint8_t num_clusters = sizeof(clusters) / sizeof(uint8_t);
     float ramp_time = 0.02;
     float fade_time = mapValue(0, 255, 0, 5, active_states[DIMMER]);
-    float on_time = 1 - mapValue(0, 255, 0, 1, active_states[EXTRA1]);
-    float on_chance = 1 - mapValue(0, 255, 0, 1, active_states[EXTRA2]);
+    float on_time;
+    float on_chance;
+    if (active_states[EXTRA1] < 85)
+    {
+      on_time = 1;
+      on_chance = 1 - mapValue(0, 84, 0, 0.8, active_states[EXTRA1]);
+    }
+    else if (active_states[EXTRA1] < 171)
+    {
+      on_time = 1 - mapValue(85, 170, 0, 0.9, active_states[EXTRA1]);
+      on_chance = 0.2;
+    }
+    else
+    {
+      on_time = 0.1;
+      on_chance = 1 - mapValue(171, 255, 0.8, 0, active_states[EXTRA1]);
+    }
     LED.strobo(0, num_clusters, clusters, ramp_time, on_time, on_chance, fade_time);
     break;
   }
 
-  case 1:
-  { //
-    // use clusters of a pole of a full letter
-    uint8_t clusters[] = {1, 1, 1, 1, 1, 1, 1, 1};
-    uint8_t cluster_order[] = {0, 1, 2, 3, 4, 5, 6, 7};
-    uint8_t num_clusters = sizeof(clusters) / sizeof(uint8_t);
-    float fade_time = mapValue(0, 255, 0, 5, active_states[DIMMER]);
-    int direction = active_states[EXTRA1] < 128 ? 1 : -1;
-    float cluster_length = 1 - mapValue(0, 255, 0, 1, active_states[EXTRA2]);
-    LED.moveClockwise(num_clusters, clusters, cluster_order, direction, fade_time, cluster_length);
+  case 1: // DONE
+  {
+    // switch between half of the ring 
+    LED.freqdiv = 4;
+    bool clusters1[] = {1, 1, 1, 1, 0, 0, 0, 0};
+    bool clusters2[] = {0, 0, 0, 0, 1, 1, 1, 1};
+    float fadetime = mapValue(0, 255, 0, 5, active_states[DIMMER]);
+    float on_time = mapValue(0, 255, 0.75, 0.1, active_states[EXTRA1]);
+    {
+      LED.alternateClusters(clusters1, clusters2, fadetime, on_time);
+    }
     break;
   }
 
-  case 2:
-  { //
-    // between 0 and 0.99
+  case 2: // DONE
+  { // increase number of pixels and colors gradually
     float fadetime = mapValue(0, 255, 0, 5, active_states[DIMMER]);
     // flash chance between 5 and 75 %
     uint8_t flash_chance = (uint8_t)mapValue(0, 255, 5, 50, active_states[EXTRA1]);
-    uint8_t num_colors = (uint8_t)mapValue(0, 255, 1, 3, active_states[EXTRA2]);
+    uint8_t num_colors = 1;
+    if (active_states[EXTRA1]>100)
+    {
+      num_colors = (uint8_t)mapValue(101, 255, 1, 3, active_states[EXTRA1]);
+    }
     LED.flashingPixels(0, flash_chance, fadetime, num_colors);
     break;
   }
 
   case 3:
-  { //
-    float width_angle = 2.0f * PI / 100.0f;
-    int direction = active_states[EXTRA2] < 128 ? 1 : -1;
+  {
+    LED.freqdiv = 4;
+    float linewidth = 0.05;
     float fadetime = mapValue(0, 255, 0, 5, active_states[DIMMER]);
-    if (active_states[EXTRA1] < 85)
-    {
-      LED.oneColorRotation(1, width_angle, direction, fadetime);
-    }
-    else if (active_states[EXTRA1] >= 85 && active_states[EXTRA1] < 171)
-    {
-      LED.oneColorRotation(2, width_angle, direction, fadetime);
-    }
-    else
-    {
-      LED.twoColorRotation(1, width_angle, direction, fadetime);
-    }
+    float slider_mapper = mapValue(0, 255, 1, 6, active_states[EXTRA1]);
+    uint8_t number_of_lines = (uint8_t)slider_mapper;
+    int direction = floor(slider_mapper) != round(slider_mapper) ? 2 : 4;
+    LED.movingLines(number_of_lines, direction, fadetime, linewidth);
     break;
   }
 
   case 4:
-  {
-    float circle_width = 0.08;
-    float clip_radius = 1;
+  { //
+    LED.freqdiv = 4;
+    float width_angle = 2.0f * PI / 40.0f;
     float fadetime = mapValue(0, 255, 0, 5, active_states[DIMMER]);
-    uint8_t num_circles = static_cast<uint8_t>(round(mapValue(0, 255, 1, 5, active_states[EXTRA1])));
-    int direction = active_states[EXTRA2] < 128 ? 1 : -1;
-    LED.movingCircles(num_circles, circle_width, direction, fadetime, clip_radius);
+    float slider_mapper = mapValue(0, 255, 1, 6, active_states[EXTRA1]);
+    uint8_t num_lines = (uint8_t)slider_mapper;
+    // if floor and round match, positive rotation, otherwise negative rotation
+    int direction = floor(slider_mapper) != round(slider_mapper) ? -1 : 1;
+    LED.oneColorRotation(num_lines, width_angle, direction, fadetime);
     break;
   }
 
   case 5:
   {
-    float fadetime = mapValue(0, 255, 0, 5, active_states[DIMMER]);
-    float block_size = mapValue(0, 255, 0.7, 0.8, active_states[EXTRA1]);
-    float move_width = mapValue(0, 255, 1, 2, active_states[EXTRA2]);
-    float y_range[] = {-0.6, 0.6};
-    LED.movingBlock(block_size, fadetime, move_width, y_range);
-    break;
-  }
-
-  case 6:
-  {
-    // use clusters of a pole of a full letter
-    bool clusters1_opt1[] = {1, 1, 1, 1, 0, 0, 0, 0};
-    bool clusters2_opt1[] = {0, 0, 0, 0, 1, 1, 1, 1};
-    bool clusters1_opt2[] = {1, 1, 0, 0, 1, 1, 0, 0};
-    bool clusters2_opt2[] = {0, 0, 1, 1, 0, 0, 1, 1};
-    float fadetime = mapValue(0, 255, 0, 5, active_states[DIMMER]);
-    float on_time = mapValue(0, 255, 0.2, 0.5, active_states[EXTRA1]);
-    // select different clusters based on input
-    if (active_states[EXTRA2] < 128)
-    {
-      LED.alternateClusters(clusters1_opt1, clusters2_opt1, fadetime, on_time);
-    }
-    else
-    {
-      LED.alternateClusters(clusters1_opt2, clusters2_opt2, fadetime, on_time);
-    }
-    break;
-  }
-
-  case 7:
-  {
-    // use clusters of a pole of a full letter
-    float linewidth = 0.05;
-    float fadetime = mapValue(0, 255, 0, 5, active_states[DIMMER]);
-    uint8_t direction = mapValue(0, 255, 1, 4, active_states[EXTRA1]);
-    uint8_t number_of_lines = mapValue(0, 255, 1, 4, active_states[EXTRA2]);
-    LED.movingLines(number_of_lines, direction, fadetime, linewidth);
-    break;
-  }
-
-  case 8:
-  {
-    // use clusters of a pole of a full letter
-    float fadetime = mapValue(0, 255, 0, 5, active_states[DIMMER]);
-    float updown_time = mapValue(0, 255, 0.5, 1, active_states[EXTRA1]);
-    float phase = mapValue(0, 255, -0.1, 0.1, active_states[EXTRA2]);
-    float line_width = 0.3;
-    float y_range[] = {-0.5, 0.5};
-    LED.updownPositionBased(updown_time, fadetime, phase, line_width, y_range);
-    break;
-  }
-
-  case 9:
-  {
-    // use clusters of a pole of a full letter
-    uint8_t clusters[] = {8};
-    uint8_t num_clusters = sizeof(clusters) / sizeof(uint8_t);
-    // between 0 and 5
-    float fadetime = mapValue(0, 255, 0, 5, active_states[DIMMER]);
-    // between 1 and 4
-    uint8_t num_pixels = (uint8_t)mapValue(0, 255, 1, 10, active_states[EXTRA1]);
-    int direction = active_states[EXTRA2] < 128 ? 1 : -1;
-    float bandwidth = 1;
-    LED.movingPixel(0, num_clusters, clusters, direction, fadetime, num_pixels, bandwidth);
-    break;
-  }
-
-  case 10:
-  {
-    float fadetime = mapValue(0, 255, 0, 5, active_states[DIMMER]);
-    float line_size = 0.5;
-    bool inverse = active_states[EXTRA2] < 128 ? true : false;
-    float pulse_time = 1 - mapValue(0, 255, 0, 0.75, active_states[EXTRA1]);
-    LED.heartbeat(line_size, fadetime, inverse, pulse_time);
-    break;
-  }
-
-  case 11:
-  {
     float blend_level = mapValue(0, 255, 0, 1, active_states[EXTRA1]);
-    int direction = active_states[EXTRA2] < 128 ? 1 : -1;
+    int direction = 1; //active_states[EXTRA2] < 128 ? 1 : -1;
     LED.rainbow(blend_level, direction);
     break;
   }
@@ -346,6 +286,27 @@ void setmotor()
   {
     digitalWrite(motor_pin, LOW);
   }
+}
+
+// receives control values from the web UI and feeds them into the same
+// used_states[] array set_states() already reads from ESP-NOW, so the
+// existing setmode()/setColor() logic runs unchanged
+void onWebSet(uint8_t mode, uint8_t bpm, uint8_t dim, uint8_t dimmer,
+              uint8_t red, uint8_t green, uint8_t blue,
+              uint8_t extra1, uint8_t extra2)
+{
+  used_states[MODE] = static_cast<uint8_t>(mode * mode_selector);
+  used_states[BPM] = bpm;
+  used_states[DIM] = dim;
+  used_states[DIMMER] = dimmer;
+  used_states[RED] = red;
+  used_states[GREEN] = green;
+  used_states[BLUE] = blue;
+  used_states[EXTRA1] = extra1;
+  used_states[EXTRA2] = extra2;
+
+  // mark the scanner as "used" so set_states() doesn't zero the dimmer
+  used_states[channels_per_scanner + scanner_number] = 1;
 }
 
 // Task for handling the LEDs on core 1
@@ -398,8 +359,8 @@ void LightsTaskcode(void *pvParameters)
 void ControllerTaskcode(void *pvParameters)
 {
 
-  // Set device as a Wi-Fi Station
-  WiFi.mode(WIFI_STA);
+  // Set device as a Wi-Fi Station, and also host an AP for the web UI
+  WiFi.mode(WIFI_AP_STA);
 
   // set mac address
   esp_wifi_set_mac(WIFI_IF_STA, &newMACAddress[0]);
@@ -413,12 +374,30 @@ void ControllerTaskcode(void *pvParameters)
 
   esp_now_register_recv_cb(OnDataRecv);
 
+  // start the web UI's AP + HTTP routes from here too: WiFi.mode()/
+  // softAP()/esp_now_init() share internal driver state and are not safe
+  // to call concurrently from another task, so this task stays the only
+  // one that ever mutates WiFi driver state. WebTaskcode only ever calls
+  // handleClient() (plain socket I/O), which is safe to run in parallel.
+  webUI.onSet(onWebSet);
+  webUI.begin();
+
   // loop and read for DMX packets
   for (;;)
   {
 
     // task delay for stability
     vTaskDelay(1);
+  }
+}
+
+// serves the troubleshooting web UI on core 0, alongside ControllerTask
+void WebTaskcode(void *pvParameters)
+{
+  for (;;)
+  {
+    webUI.handle();
+    vTaskDelay(2);
   }
 }
 
@@ -447,6 +426,17 @@ void setup()
       1,              /* priority of the task */
       &LEDTask,       /* Task handle to keep track of created task */
       1);             /* pin task to core 1 */
+  delay(500);
+
+  // create a task that serves the web UI, executed on core 0
+  xTaskCreatePinnedToCore(
+      WebTaskcode, /* Task function. */
+      "WebTask",   /* name of task. */
+      8000,        /* Stack size of task */
+      NULL,        /* parameter of the task */
+      1,           /* priority of the task */
+      &WebTask,    /* Task handle to keep track of created task */
+      0);          /* pin task to core 0 */
   delay(500);
 }
 

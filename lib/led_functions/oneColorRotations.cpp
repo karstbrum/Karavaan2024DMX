@@ -23,7 +23,7 @@ void Pixels::oneColorRotation(uint8_t num_angles, float width_angle, int directi
     float Ts_ = Ts;
 
     // count the pulseindex normally
-    pulseIndex += static_cast<float>(direction) * (Ts_ / 1000) * (BPM / 60) / num_angles / freqdiv; // Ts*BPS (s^1 * s^-1)
+    pulseIndex += static_cast<float>(direction) * (Ts_ / 1000) * (BPM / 60) / freqdiv; // Ts*BPS (s^1 * s^-1)
 
     // if pulseindex exceeds 1, select the cluster to light up
     if (pulseIndex > 1 || pulseIndex < 0)
@@ -34,8 +34,8 @@ void Pixels::oneColorRotation(uint8_t num_angles, float width_angle, int directi
     }
 
     // determine the angles inbetween which
-    float angle_start[num_angles + 1]; // +1 for ease of use later
-    float angle_end[num_angles];
+    // float angle_start[num_angles + 1]; // +1 for ease of use later
+    // float angle_end[num_angles];
 
     // define increment in angle (float)
     float angle_incr = 2.0f * PI / (num_angles);
@@ -46,15 +46,31 @@ void Pixels::oneColorRotation(uint8_t num_angles, float width_angle, int directi
 
         // define angle start and end
         angle_start[i_angle] = 2.0f * PI * pulseIndex + i_angle * angle_incr;
+        // now add the angle width
+        angle_end[i_angle] = angle_start[i_angle] + width_angle;
+        // if angle_start is larger than angle end, set the start to the last end
+        // this has to be done before wrapping 
+        // also fix for direction dependency
+        if (direction == 1 && angle_start[i_angle] > prev_angle_end[i_angle])
+        {
+            angle_start[i_angle] =  prev_angle_end[i_angle];
+        }
+        else if (direction == -1 && prev_angle_start[i_angle] > angle_end[i_angle])
+        {
+            angle_end[i_angle] =  prev_angle_start[i_angle];
+        }
+
         // wrap start angle to [0, 2*pi]
         angle_start[i_angle] = angle_start[i_angle] > 2 * PI ? angle_start[i_angle] - 2 * PI : angle_start[i_angle];
         angle_start[i_angle] = angle_start[i_angle] < 0 ? angle_start[i_angle] + 2 * PI : angle_start[i_angle];
-
-        // now add the angle width
-        angle_end[i_angle] = angle_start[i_angle] + width_angle;
         // wrap end angle to [0, 2*pi]
         angle_end[i_angle] = angle_end[i_angle] > 2 * PI ? angle_end[i_angle] - 2 * PI : angle_end[i_angle];
         angle_end[i_angle] = angle_end[i_angle] < 0 ? angle_end[i_angle] + 2 * PI : angle_end[i_angle];
+
+        // copy to previous angle end
+        prev_angle_end[i_angle] = angle_end[i_angle];
+        prev_angle_start[i_angle] = angle_start[i_angle];
+
     }
 
     // define arrays

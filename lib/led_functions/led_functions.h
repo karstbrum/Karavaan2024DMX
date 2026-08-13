@@ -80,6 +80,12 @@ public:
     // number of sides
     uint8_t numSides;
 
+    // accessors used by the web UI to plot pixel layout and live color
+    uint16_t getTotalPixels();
+    float getPixelX(uint16_t i);
+    float getPixelY(uint16_t i);
+    void getPixelColor(uint16_t i, uint8_t &w, uint8_t &r, uint8_t &g, uint8_t &b);
+
 private:
     // basic functions
     void defineFirstColors();
@@ -97,6 +103,12 @@ private:
     const uint8_t LPOS = 2;
     const uint8_t APOS = 3;
     float pixel_pos[4][MAXNUMPIXELS];
+
+    // get min and max positions in carthesian
+    float x_min;
+    float x_max;
+    float y_min;
+    float y_max;
 
     // set the alpha value for dimmer
     float alpha_disc = 0;
@@ -126,6 +138,18 @@ private:
     // current and previous positions, used for movingPixel.cpp
     float pos_array_prev[50];
     float pos_array[50];
+
+    // current and previous angles for rotation
+    float angle_start[50];
+    float angle_end[50];
+    float prev_angle_end[50];
+    float prev_angle_start[50];
+
+    // current and previous line positions, used for movingLines.cpp
+    float line_start[50];
+    float line_end[50];
+    float prev_line_end[50];
+    float prev_line_start[50];
 
     // cluster counter, used in movingClockwise.cpp
     uint8_t cluster_counter = 0;

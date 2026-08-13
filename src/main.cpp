@@ -2,6 +2,7 @@
 
 // own libraries
 #include "led_functions.h"
+#include "web_ui.h"
 
 // other libraries
 #include "esp_dmx.h"
@@ -76,6 +77,7 @@ uint8_t new_mode;
 // set up the different cores
 TaskHandle_t ControllerTask;
 TaskHandle_t LEDTask;
+TaskHandle_t WebTask;
 
 // bottom post y start and end (bottom to top)
 float y_b1 = -0.17;
@@ -151,6 +153,10 @@ uint8_t sidesPerPin[] = {10, 10, 9, 10};
 uint8_t LEDPins[] = {26, 25, 33, 32};
 uint8_t numPins = sizeof(LEDPins);
 Pixels LED(numSides, LEDsPerSide, numPins, sidesPerPin, LEDPins, Ts);
+
+// web UI for troubleshooting: plots pixel_pos / live color and can trigger
+// a mode directly, bypassing DMX input
+WebUI webUI(LED, "Karavaan-Main", "ledtest123");
 
 // the LED positions are defined in the setup loop
 // can only declare variables in global space
@@ -439,6 +445,27 @@ void setmode()
   }
 }
 
+// receives control values from the web UI and feeds them into the same
+// used_states[] array set_states() already reads from DMX, so the
+// existing setmode()/setColor() logic runs unchanged
+void onWebSet(uint8_t mode, uint8_t bpm, uint8_t dim, uint8_t dimmer,
+              uint8_t red, uint8_t green, uint8_t blue,
+              uint8_t extra1, uint8_t extra2)
+{
+  used_states[MODE] = static_cast<uint8_t>(mode * mode_selector);
+  used_states[BPM] = bpm;
+  used_states[DIM] = dim;
+  used_states[DIMMER] = dimmer;
+  used_states[RED] = red;
+  used_states[GREEN] = green;
+  used_states[BLUE] = blue;
+  used_states[EXTRA1] = extra1;
+  used_states[EXTRA2] = extra2;
+
+  // mark the scanner as "used" so set_states() doesn't zero the dimmer
+  used_states[channels_per_scanner + scanner_number] = 1;
+}
+
 // Task for handling the LEDs on core 1
 void LightsTaskcode(void *pvParameters)
 {
@@ -488,8 +515,8 @@ void LightsTaskcode(void *pvParameters)
 void ControllerTaskcode(void *pvParameters)
 {
 
-  // Set device as a Wi-Fi Station
-  WiFi.mode(WIFI_STA);
+  // Set device as a Wi-Fi Station, and also host an AP for the web UI
+  WiFi.mode(WIFI_AP_STA);
 
   // set mac address
   esp_wifi_set_mac(WIFI_IF_STA, &newMACAddress[0]);
@@ -522,6 +549,14 @@ void ControllerTaskcode(void *pvParameters)
   {
     Serial.println("Pair failed");
   }
+
+  // start the web UI's AP + HTTP routes from here too: WiFi.mode()/
+  // softAP()/esp_now_init() share internal driver state and are not safe
+  // to call concurrently from another task, so this task stays the only
+  // one that ever mutates WiFi driver state. WebTaskcode only ever calls
+  // handleClient() (plain socket I/O), which is safe to run in parallel.
+  webUI.onSet(onWebSet);
+  webUI.begin();
 
   // First, use the default DMX configuration...
   dmx_config_t config = DMX_CONFIG_DEFAULT;
@@ -580,6 +615,16 @@ void ControllerTaskcode(void *pvParameters)
   }
 }
 
+// serves the troubleshooting web UI on core 0, alongside ControllerTask
+void WebTaskcode(void *pvParameters)
+{
+  for (;;)
+  {
+    webUI.handle();
+    vTaskDelay(2);
+  }
+}
+
 void setup()
 {
 
@@ -605,6 +650,17 @@ void setup()
       1,              /* priority of the task */
       &LEDTask,       /* Task handle to keep track of created task */
       1);             /* pin task to core 1 */
+  delay(500);
+
+  // create a task that serves the web UI, executed on core 0
+  xTaskCreatePinnedToCore(
+      WebTaskcode, /* Task function. */
+      "WebTask",   /* name of task. */
+      8000,        /* Stack size of task */
+      NULL,        /* parameter of the task */
+      1,           /* priority of the task */
+      &WebTask,    /* Task handle to keep track of created task */
+      0);          /* pin task to core 0 */
   delay(500);
 }
 

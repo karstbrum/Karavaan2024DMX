@@ -106,10 +106,36 @@ void Pixels::definePositions_carthesian(float x_start[], float y_start[], float 
 
             printf("x: %f, y: %f, l: %f, a: %f\n", x, y, l, a);
 
+            // in first iteration, set numbers, after that check for min and max
+            if (i_side == 0 && k ==0)
+            {
+                x_min = x;
+                x_max = x;
+                y_min = y;
+                y_max = y;
+            }
+            // overwrite values with max / min
+            else
+            {
+                x_min = x < x_min ? x : x_min;
+                x_max = x > x_max ? x : x_max;
+                y_min = y < y_min ? y : y_min;
+                y_max = y > y_max ? y : y_max;
+            }
+
             // increment pixels
             i_pixel++;
         }
     }
+
+    // add 1 percent to min and max
+    x_min = x_min*1.01;
+    x_max = x_max*1.01;
+    y_min = y_min*1.01;
+    y_max = y_max*1.01;
+
+    printf("x_min: %f, x_max: %f, y_min: %f, y_max: %f\n", x_min, x_max, y_min, y_max);
+
 }
 
 void Pixels::definePositions_polar(float a_start[], float a_end[], float l_side[])
@@ -154,10 +180,36 @@ void Pixels::definePositions_polar(float a_start[], float a_end[], float l_side[
 
             printf("x: %f, y: %f, l: %f, a: %f\n", x, y, l, a);
 
+            // in first iteration, set numbers, after that check for min and max
+            if (i_side == 0 && k ==0)
+            {
+                x_min = x;
+                x_max = x;
+                y_min = y;
+                y_max = y;
+            }
+            // overwrite values with max / min
+            else
+            {
+                x_min = x < x_min ? x : x_min;
+                x_max = x > x_max ? x : x_max;
+                y_min = y < y_min ? y : y_min;
+                y_max = y > y_max ? y : y_max;
+            }
+
             // increment pixels
             i_pixel++;
         }
     }
+
+    // add 1 percent to min and max
+    x_min = x_min*1.01;
+    x_max = x_max*1.01;
+    y_min = y_min*1.01;
+    y_max = y_max*1.01;
+
+    printf("x_min: %f, x_max: %f, y_min: %f, y_max: %f\n", x_min, x_max, y_min, y_max);
+
 }
 
 void Pixels::defineFirstColors()
@@ -230,6 +282,29 @@ void Pixels::setDimmedRange(uint16_t index_start, uint16_t index_end, uint8_t co
         // set color and correct dimvalue to the LED
         strip->setColorsIndividualFixed(i_led, color_index, dimstate[i_led]);
     }
+}
+
+uint16_t Pixels::getTotalPixels()
+{
+    return totalPixels;
+}
+
+float Pixels::getPixelX(uint16_t i)
+{
+    return pixel_pos[XPOS][i];
+}
+
+float Pixels::getPixelY(uint16_t i)
+{
+    return pixel_pos[YPOS][i];
+}
+
+void Pixels::getPixelColor(uint16_t i, uint8_t &w, uint8_t &r, uint8_t &g, uint8_t &b)
+{
+    w = strip->RGBWStates[i][0];
+    r = strip->RGBWStates[i][1];
+    g = strip->RGBWStates[i][2];
+    b = strip->RGBWStates[i][3];
 }
 
 void Pixels::resetCounters()
