@@ -156,9 +156,9 @@ void WebUI::handleSet()
     };
 
     setCallback(
-        argU8("mode", 0), argU8("bpm", 1), argU8("dim", 255), argU8("dimmer", 0),
-        argU8("red", 255), argU8("green", 255), argU8("blue", 255),
-        argU8("extra1", 0), argU8("extra2", 0));
+        argU8("mode", 0), argU8("extra1", 0), argU8("bpm", 1), 
+        argU8("dim", 255), argU8("dimmer", 0), argU8("color", 255)
+        );
 
     server.send(200, "text/plain", "ok");
 }

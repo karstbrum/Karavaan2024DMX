@@ -22,7 +22,7 @@ uint8_t send_to_address[] = {0xA8, 0x42, 0xE3, 0x8D, 0xB8, 0x01};
 uint8_t newMACAddress[] = {0xA8, 0x42, 0xE3, 0x8D, 0xB8, 0x05};
 
 // number of modes
-const int num_modes = 12; // to be defined
+const int num_modes = 6; // to be defined
 const float mode_selector = ceil(256.0 / num_modes);
 
 // scanner number
@@ -58,14 +58,11 @@ const int rts_pin = 21;
 
 // define active states (are used by the lights)
 const uint8_t MODE = 0;
-const uint8_t BPM = 1;
-const uint8_t DIM = 2;
+const uint8_t EXTRA1 = 1;
+const uint8_t BPM = 2;
+const uint8_t DIM = 3;
 const uint8_t DIMMER = 4;
-const uint8_t RED = 5;
-const uint8_t GREEN = 6;
-const uint8_t BLUE = 7;
-const uint8_t EXTRA1 = 8;
-const uint8_t EXTRA2 = 9;
+const uint8_t COLOR = 5;
 uint8_t active_states[16];
 
 // previous mode for non direct switching
@@ -246,42 +243,34 @@ void set_states()
 
 void setColor()
 {
+  // declare color variable
+  uint8_t r; uint8_t g; uint8_t b; uint8_t w;
 
-  float red = static_cast<float>(active_states[RED]);
-  float green = static_cast<float>(active_states[GREEN]);
-  float blue = static_cast<float>(active_states[BLUE]);
-  float white = 0;
-
-  // if red green and blue are almost equal, select white
-  if (abs(red - green) + abs(green - blue) < 10)
-  {
-    white = 255;
-    red = 0;
-    green = 0;
-    blue = 0;
+  if (active_states[COLOR] == 255) 
+  { 
+    r = g = b = 0; w = 255;
   }
-
-  // else normalize red green and blue to 255
   else
   {
-    float max_color = red;
-    max_color = green > max_color ? green : max_color;
-    max_color = blue > max_color ? blue : max_color;
+    w = 0;
 
-    // define normalization factor
-    // divide all colors by max color and multiply by 255
-    float max_color_f = max_color;
-    red = red / max_color * 255.0f;
-    green = green / max_color * 255.0f;
-    blue = blue / max_color * 255.0f;
+    const uint16_t h   = static_cast<uint16_t>(active_states[COLOR]) * 6;  // 0..1524
+    const uint8_t  seg = h >> 8;          // 0..5
+    const uint8_t  f   = h & 0xFF;        // position in segment
+
+    switch (seg) {
+      case 0:  r = 255;     g = f;       b = 0;       break;  // red     -> yellow
+      case 1:  r = 255 - f; g = 255;     b = 0;       break;  // yellow  -> green
+      case 2:  r = 0;       g = 255;     b = f;       break;  // green   -> cyan
+      case 3:  r = 0;       g = 255 - f; b = 255;     break;  // cyan    -> blue
+      case 4:  r = f;       g = 0;       b = 255;     break;  // blue    -> magenta
+      default: r = 255;     g = 0;       b = 255 - f; break;  // magenta -> red
+    }
+  
   }
 
-  uint8_t white_i = static_cast<uint8_t>(white);
-  uint8_t red_i = static_cast<uint8_t>(red);
-  uint8_t green_i = static_cast<uint8_t>(green);
-  uint8_t blue_i = static_cast<uint8_t>(blue);
+  LED.changeColor(w, r, g, b);
 
-  LED.changeColor(white_i, red_i, green_i, blue_i);
 }
 
 void setmode()
@@ -289,114 +278,110 @@ void setmode()
   LED.freqdiv = 1;
   switch (active_states[MODE])
   {
-  case 0: // DONE
-  { //
-    // clusters are defined by a pole or full letter
-    uint8_t clusters[] = {2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 4, 5, 4, 6};
-    uint8_t num_clusters = sizeof(clusters) / sizeof(uint8_t);
-    float ramp_time = 0.02;
-    float fade_time = mapValue(0, 255, 0, 5, active_states[DIMMER]);
-    float on_time;
-    float on_chance;
-    if (active_states[EXTRA1] < 85)
-    {
-      on_time = 1;
-      on_chance = 1 - mapValue(0, 84, 0, 0.8, active_states[EXTRA1]);
+    case 0: // DONE
+    { //
+      // clusters are defined by a pole or full letter
+      uint8_t clusters[] = {2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 4, 5, 4, 6};
+      uint8_t num_clusters = sizeof(clusters) / sizeof(uint8_t);
+      float ramp_time = 0.02;
+      float fade_time = mapValue(0, 255, 0, 5, active_states[DIMMER]);
+      float on_time;
+      float on_chance;
+      if (active_states[EXTRA1] < 85)
+      {
+        on_time = 1;
+        on_chance = 1 - mapValue(0, 84, 0, 0.8, active_states[EXTRA1]);
+      }
+      else if (active_states[EXTRA1] < 171)
+      {
+        on_time = 1 - mapValue(85, 170, 0, 0.9, active_states[EXTRA1]);
+        on_chance = 0.2;
+      }
+      else
+      {
+        on_time = 0.1;
+        on_chance = 1 - mapValue(171, 255, 0.8, 0, active_states[EXTRA1]);
+      }
+      LED.strobo(0, num_clusters, clusters, ramp_time, on_time, on_chance, fade_time);
+      break;
     }
-    else if (active_states[EXTRA1] < 171)
-    {
-      on_time = 1 - mapValue(85, 170, 0, 0.9, active_states[EXTRA1]);
-      on_chance = 0.2;
+
+    case 1: // DONE
+    { // Cluster alternate in up down fashion
+      bool clusters1[] = {1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0,
+                              1, 0, 0, 1, 1, 0, 0, 0, 1, 0, 1, 1, 0, 1, 0, 0, 1, 1, 0};
+      bool clusters2[] = {0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1,
+                              0, 1, 1, 0, 0, 1, 1, 1, 0, 1, 0, 0, 1, 0, 1, 1, 0, 0, 1};
+      float fadetime = mapValue(0, 255, 0, 5, active_states[DIMMER]);
+      float on_time = mapValue(0, 255, 0.75, 0.1, active_states[EXTRA1]);
+      {
+        LED.alternateClusters(clusters1, clusters2, fadetime, on_time);
+      }
+      break;
     }
-    else
-    {
-      on_time = 0.1;
-      on_chance = 1 - mapValue(171, 255, 0.8, 0, active_states[EXTRA1]);
+
+    case 2: // DONE
+    { // increase number of pixels and colors gradually
+      float fadetime = mapValue(0, 255, 0, 5, active_states[DIMMER]);
+      // flash chance between 5 and 75 %
+      uint8_t flash_chance = (uint8_t)mapValue(0, 255, 5, 50, active_states[EXTRA1]);
+      uint8_t num_colors = 1;
+      if (active_states[EXTRA1]>100)
+      {
+        num_colors = (uint8_t)mapValue(101, 255, 1, 3, active_states[EXTRA1]);
+      }
+      LED.flashingPixels(0, flash_chance, fadetime, num_colors);
+      break;
     }
-    LED.strobo(0, num_clusters, clusters, ramp_time, on_time, on_chance, fade_time);
-    break;
-  }
 
-  case 1: // DONE
-  { // Cluster alternate in up down fashion
-    bool clusters1[] = {1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0,
-                             1, 0, 0, 1, 1, 0, 0, 0, 1, 0, 1, 1, 0, 1, 0, 0, 1, 1, 0};
-    bool clusters2[] = {0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1,
-                             0, 1, 1, 0, 0, 1, 1, 1, 0, 1, 0, 0, 1, 0, 1, 1, 0, 0, 1};
-    float fadetime = mapValue(0, 255, 0, 5, active_states[DIMMER]);
-    float on_time = mapValue(0, 255, 0.75, 0.1, active_states[EXTRA1]);
+    case 3: // DONE
     {
-      LED.alternateClusters(clusters1, clusters2, fadetime, on_time);
+      // Lines move in carthesion up or down
+      LED.freqdiv = 4;
+      float linewidth = 0.05;
+      float fadetime = mapValue(0, 255, 0, 5, active_states[DIMMER]);
+      float slider_mapper = mapValue(0, 255, 0.5, 6.49, active_states[EXTRA1]);
+      uint8_t number_of_lines = (uint8_t)round(slider_mapper);
+      int direction = floor(slider_mapper) != round(slider_mapper) ? 2 : 4;
+      LED.movingLines(number_of_lines, direction, fadetime, linewidth);
+      break;
     }
-    break;
-  }
 
-  case 2: // DONE
-  { // increase number of pixels and colors gradually
-    float fadetime = mapValue(0, 255, 0, 5, active_states[DIMMER]);
-    // flash chance between 5 and 75 %
-    uint8_t flash_chance = (uint8_t)mapValue(0, 255, 5, 50, active_states[EXTRA1]);
-    uint8_t num_colors = 1;
-    if (active_states[EXTRA1]>100)
+    case 4: // DONE
     {
-      num_colors = (uint8_t)mapValue(101, 255, 1, 3, active_states[EXTRA1]);
+      // Lines move in carthesion to mimic rotation
+      LED.freqdiv = 4;
+      float linewidth = 1.0f/40.0f;
+      float fadetime = mapValue(0, 255, 0, 5, active_states[DIMMER]);
+      float slider_mapper = mapValue(0, 255, 0.5, 4.49, active_states[EXTRA1]);
+      uint8_t number_of_lines = (uint8_t)round(slider_mapper);
+      int direction = floor(slider_mapper) != round(slider_mapper) ? 1 : 3;
+      LED.movingLines(number_of_lines, direction, fadetime, linewidth);
+      break;
     }
-    LED.flashingPixels(0, flash_chance, fadetime, num_colors);
-    break;
-  }
 
-  case 3: // DONE
-  {
-    // Lines move in carthesion up or down
-    LED.freqdiv = 4;
-    float linewidth = 0.05;
-    float fadetime = mapValue(0, 255, 0, 5, active_states[DIMMER]);
-    float slider_mapper = mapValue(0, 255, 0.5, 6.49, active_states[EXTRA1]);
-    uint8_t number_of_lines = (uint8_t)round(slider_mapper);
-    int direction = floor(slider_mapper) != round(slider_mapper) ? 2 : 4;
-    LED.movingLines(number_of_lines, direction, fadetime, linewidth);
-    break;
-  }
-
-  case 4: // DONE
-  {
-    // Lines move in carthesion to mimic rotation
-    LED.freqdiv = 4;
-    float linewidth = 1.0f/40.0f;
-    float fadetime = mapValue(0, 255, 0, 5, active_states[DIMMER]);
-    float slider_mapper = mapValue(0, 255, 0.5, 4.49, active_states[EXTRA1]);
-    uint8_t number_of_lines = (uint8_t)round(slider_mapper);
-    int direction = floor(slider_mapper) != round(slider_mapper) ? 1 : 3;
-    LED.movingLines(number_of_lines, direction, fadetime, linewidth);
-    break;
-  }
-
-  case 5: // DONE
-  { // rainbow light switching
-    float blend_level = mapValue(0, 255, 0, 1, active_states[EXTRA1]);
-    int direction = 1; 
-    LED.rainbow(blend_level, direction);
-    break;
-  }
+    case 5: // DONE
+    { // rainbow light switching
+      float blend_level = mapValue(0, 255, 0, 1, active_states[EXTRA1]);
+      int direction = 1; 
+      LED.rainbow(blend_level, direction);
+      break;
+    }
   }
 }
 
 // receives control values from the web UI and feeds them into the same
 // used_states[] array set_states() already reads from DMX, so the
 // existing setmode()/setColor() logic runs unchanged
-void onWebSet(uint8_t mode, uint8_t bpm, uint8_t dim, uint8_t dimmer,
-              uint8_t red, uint8_t green, uint8_t blue,
-              uint8_t extra1, uint8_t extra2)
+void onWebSet(uint8_t mode, uint8_t extra1, uint8_t bpm, 
+              uint8_t dim, uint8_t dimmer, uint8_t color)
 {
   used_states[MODE] = static_cast<uint8_t>(mode * mode_selector);
+  used_states[EXTRA1] = extra1;
   used_states[BPM] = bpm;
   used_states[DIM] = dim;
   used_states[DIMMER] = dimmer;
-  used_states[RED] = red;
-  used_states[GREEN] = green;
-  used_states[BLUE] = blue;
-  used_states[EXTRA1] = extra1;
-  used_states[EXTRA2] = extra2;
+  used_states[COLOR] = color;
 
   // mark the scanner as "used" so set_states() doesn't zero the dimmer
   used_states[channels_per_scanner + scanner_number] = 1;

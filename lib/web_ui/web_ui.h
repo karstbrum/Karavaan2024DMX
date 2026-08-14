@@ -9,9 +9,8 @@ class WebUI
 {
 public:
     // invoked from the /set handler with the raw 0-255 control values
-    typedef void (*SetCallback)(uint8_t mode, uint8_t bpm, uint8_t dim, uint8_t dimmer,
-                                 uint8_t red, uint8_t green, uint8_t blue,
-                                 uint8_t extra1, uint8_t extra2);
+    typedef void (*SetCallback)(uint8_t mode, uint8_t extra1, uint8_t bpm, 
+                                uint8_t dim, uint8_t dimmer, uint8_t color);
 
     WebUI(Pixels &led_, const char *apSSID_, const char *apPassword_);
 

@@ -16,7 +16,7 @@
 uint8_t newMACAddress[] = {0xA8, 0x42, 0xE3, 0x8D, 0xB8, 0x01};
 
 // number of modes
-const int num_modes = 12; // to be defined
+const int num_modes = 6; // to be defined
 const float mode_selector = ceil(256.0 / num_modes);
 
 // scanner number
@@ -34,14 +34,11 @@ uint8_t used_states[dmx_size_used];
 
 // define active states (are used by the lights)
 const uint8_t MODE = 0;
-const uint8_t BPM = 1;
-const uint8_t DIM = 2;
+const uint8_t EXTRA1 = 1;
+const uint8_t BPM = 2;
+const uint8_t DIM = 3;
 const uint8_t DIMMER = 4;
-const uint8_t RED = 5;
-const uint8_t GREEN = 6;
-const uint8_t BLUE = 7;
-const uint8_t EXTRA1 = 8;
-const uint8_t EXTRA2 = 9;
+const uint8_t COLOR = 5;
 uint8_t active_states[channels_per_scanner];
 
 // check if motor should be on
@@ -140,42 +137,34 @@ void set_states()
 
 void setColor()
 {
+  // declare color variable
+  uint8_t r; uint8_t g; uint8_t b; uint8_t w;
 
-  float red = static_cast<float>(active_states[RED]);
-  float green = static_cast<float>(active_states[GREEN]);
-  float blue = static_cast<float>(active_states[BLUE]);
-  float white = 0;
-
-  // if red green and blue are almost equal, select white
-  if (abs(red - green) + abs(green - blue) < 10)
-  {
-    white = 255;
-    red = 0;
-    green = 0;
-    blue = 0;
+  if (active_states[COLOR] == 255) 
+  { 
+    r = g = b = 0; w = 255;
   }
-
-  // else normalize red green and blue to 255
   else
   {
-    float max_color = red;
-    max_color = green > max_color ? green : max_color;
-    max_color = blue > max_color ? blue : max_color;
+    w = 0;
 
-    // define normalization factor
-    // divide all colors by max color and multiply by 255
-    float max_color_f = max_color;
-    red = red / max_color * 255.0f;
-    green = green / max_color * 255.0f;
-    blue = blue / max_color * 255.0f;
+    const uint16_t h   = static_cast<uint16_t>(active_states[COLOR]) * 6;  // 0..1524
+    const uint8_t  seg = h >> 8;          // 0..5
+    const uint8_t  f   = h & 0xFF;        // position in segment
+
+    switch (seg) {
+      case 0:  r = 255;     g = f;       b = 0;       break;  // red     -> yellow
+      case 1:  r = 255 - f; g = 255;     b = 0;       break;  // yellow  -> green
+      case 2:  r = 0;       g = 255;     b = f;       break;  // green   -> cyan
+      case 3:  r = 0;       g = 255 - f; b = 255;     break;  // cyan    -> blue
+      case 4:  r = f;       g = 0;       b = 255;     break;  // blue    -> magenta
+      default: r = 255;     g = 0;       b = 255 - f; break;  // magenta -> red
+    }
+  
   }
 
-  uint8_t white_i = static_cast<uint8_t>(white);
-  uint8_t red_i = static_cast<uint8_t>(red);
-  uint8_t green_i = static_cast<uint8_t>(green);
-  uint8_t blue_i = static_cast<uint8_t>(blue);
+  LED.changeColor(w, r, g, b);
 
-  LED.changeColor(white_i, red_i, green_i, blue_i);
 }
 
 void setmode()
@@ -246,7 +235,7 @@ void setmode()
     float linewidth = 0.05;
     float fadetime = mapValue(0, 255, 0, 5, active_states[DIMMER]);
     float slider_mapper = mapValue(0, 255, 0.5, 6.49, active_states[EXTRA1]);
-    uint8_t number_of_lines = (uint8_t)slider_mapper;
+    uint8_t number_of_lines = (uint8_t)round(slider_mapper);
     int direction = floor(slider_mapper) != round(slider_mapper) ? 2 : 4;
     LED.movingLines(number_of_lines, direction, fadetime, linewidth);
     break;
@@ -290,21 +279,17 @@ void setmotor()
 }
 
 // receives control values from the web UI and feeds them into the same
-// used_states[] array set_states() already reads from ESP-NOW, so the
+// used_states[] array set_states() already reads from DMX, so the
 // existing setmode()/setColor() logic runs unchanged
-void onWebSet(uint8_t mode, uint8_t bpm, uint8_t dim, uint8_t dimmer,
-              uint8_t red, uint8_t green, uint8_t blue,
-              uint8_t extra1, uint8_t extra2)
+void onWebSet(uint8_t mode, uint8_t extra1, uint8_t bpm, 
+              uint8_t dim, uint8_t dimmer, uint8_t color)
 {
   used_states[MODE] = static_cast<uint8_t>(mode * mode_selector);
+  used_states[EXTRA1] = extra1;
   used_states[BPM] = bpm;
   used_states[DIM] = dim;
   used_states[DIMMER] = dimmer;
-  used_states[RED] = red;
-  used_states[GREEN] = green;
-  used_states[BLUE] = blue;
-  used_states[EXTRA1] = extra1;
-  used_states[EXTRA2] = extra2;
+  used_states[COLOR] = color;
 
   // mark the scanner as "used" so set_states() doesn't zero the dimmer
   used_states[channels_per_scanner + scanner_number] = 1;

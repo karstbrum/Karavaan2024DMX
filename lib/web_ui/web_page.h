@@ -41,14 +41,11 @@ static const char WEB_UI_PAGE[] PROGMEM = R"rawliteral(
         <option value="5">5 - Rainbow</option>
       </select>
     </div>
+    <div class="row"><label for="extra1">Extra1</label><input type="range" id="extra1" min="0" max="255" value="0"><output></output></div>
     <div class="row"><label for="bpm">BPM</label><input type="range" id="bpm" min="1" max="255" value="100"><output></output></div>
     <div class="row"><label for="dim">Dim</label><input type="range" id="dim" min="0" max="255" value="255"><output></output></div>
     <div class="row"><label for="dimmer">Fadetime</label><input type="range" id="dimmer" min="0" max="255" value="0"><output></output></div>
-    <div class="row"><label for="red">Red</label><input type="range" id="red" min="0" max="255" value="255"><output></output></div>
-    <div class="row"><label for="green">Green</label><input type="range" id="green" min="0" max="255" value="255"><output></output></div>
-    <div class="row"><label for="blue">Blue</label><input type="range" id="blue" min="0" max="255" value="255"><output></output></div>
-    <div class="row"><label for="extra1">Extra1</label><input type="range" id="extra1" min="0" max="255" value="0"><output></output></div>
-    <div class="row"><label for="extra2">Extra2</label><input type="range" id="extra2" min="0" max="255" value="0"><output></output></div>
+    <div class="row"><label for="color">Color</label><input type="range" id="color" min="0" max="255" value="255"><output></output></div>
     <button id="send">Send</button>
   </div>
 </div>
@@ -118,7 +115,7 @@ fetch('/positions').then(r => r.json()).then(data => {
   pollColors();
 });
 
-for (const id of ['bpm','dim','dimmer','red','green','blue','extra1','extra2']) {
+for (const id of ['extra1', 'bpm','dim','dimmer','color']) {
   const input = document.getElementById(id);
   const out = input.nextElementSibling;
   out.textContent = input.value;
@@ -128,7 +125,7 @@ for (const id of ['bpm','dim','dimmer','red','green','blue','extra1','extra2']) 
 document.getElementById('send').addEventListener('click', () => {
   const button = document.getElementById('send');
   const body = new URLSearchParams();
-  for (const id of ['mode','bpm','dim','dimmer','red','green','blue','extra1','extra2']) {
+  for (const id of ['mode', 'extra1', 'bpm','dim','dimmer','color']) {
     body.set(id, document.getElementById(id).value);
   }
   button.textContent = 'Sending...';
