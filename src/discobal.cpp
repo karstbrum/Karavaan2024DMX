@@ -16,7 +16,7 @@
 uint8_t newMACAddress[] = {0xA8, 0x42, 0xE3, 0x8D, 0xB8, 0x01};
 
 // number of modes
-const int num_modes = 6; // to be defined
+const int num_modes = 5; // to be defined
 const float mode_selector = ceil(256.0 / num_modes);
 
 // scanner number
@@ -25,7 +25,7 @@ const int scanner_number_motor = 2;
 
 // DMX size (number of addresses)c
 const int num_used_scanners = 6;
-const int channels_per_scanner = 16;
+const int channels_per_scanner = 32;
 
 const int dmx_size_used = num_used_scanners*channels_per_scanner;
 
@@ -36,13 +36,14 @@ uint8_t used_states[dmx_size_used];
 const uint8_t MODE = 0;
 const uint8_t EXTRA1 = 1;
 const uint8_t BPM = 2;
-const uint8_t DIM = 3;
+const uint8_t COLOR = 3;
 const uint8_t DIMMER = 4;
-const uint8_t COLOR = 5;
+const uint8_t DIM = 5;
 uint8_t active_states[channels_per_scanner];
 
 // check if motor should be on
-bool motor_on;
+// set to always on [TEMP FIX]
+bool motor_on = true;
 
 // define tasks (multicore)
 TaskHandle_t LEDTask;
@@ -121,14 +122,15 @@ void set_states()
     active_states[DIM] = 0;
   }
 
-  if(used_states[channels_per_scanner + scanner_number_motor] == 1)
-  {
-    motor_on = true;
-  }
-  else
-  {
-    motor_on = false;
-  }
+  // set to always on, so no check [TEMP FIX]
+  // if(used_states[channels_per_scanner + scanner_number_motor] == 1)
+  // {
+  //   motor_on = true;
+  // }
+  // else
+  // {
+  //   motor_on = false;
+  // }
 
   // set a BPM of at least 1
   active_states[BPM] = active_states[BPM] > 1 ? active_states[BPM] : 1;
@@ -163,12 +165,22 @@ void setColor()
   
   }
 
+  // set colors to lower value if multiple are active
+  float total_color = r + g + b;
+  if (r + g + b > 255)
+  {
+    r = round(r * 255.0/total_color);
+    g = round(g * 255.0/total_color);
+    b = round(b * 255.0/total_color);
+  }
+
   LED.changeColor(w, r, g, b);
 
 }
 
 void setmode()
 {
+
   LED.freqdiv = 1;
   switch (active_states[MODE])
   {
@@ -228,20 +240,20 @@ void setmode()
     break;
   }
 
-  case 3: // DONE
-  {
-    // Lines move in carthesion of the ring
-    LED.freqdiv = 4;
-    float linewidth = 0.05;
-    float fadetime = mapValue(0, 255, 0, 5, active_states[DIMMER]);
-    float slider_mapper = mapValue(0, 255, 0.5, 6.49, active_states[EXTRA1]);
-    uint8_t number_of_lines = (uint8_t)round(slider_mapper);
-    int direction = floor(slider_mapper) != round(slider_mapper) ? 2 : 4;
-    LED.movingLines(number_of_lines, direction, fadetime, linewidth);
-    break;
-  }
+  // case 3: // DONE
+  // {
+  //   // Lines move in carthesion of the ring
+  //   LED.freqdiv = 4;
+  //   float linewidth = 0.05;
+  //   float fadetime = mapValue(0, 255, 0, 5, active_states[DIMMER]);
+  //   float slider_mapper = mapValue(0, 255, 0.5, 6.49, active_states[EXTRA1]);
+  //   uint8_t number_of_lines = (uint8_t)round(slider_mapper);
+  //   int direction = floor(slider_mapper) != round(slider_mapper) ? 2 : 4;
+  //   LED.movingLines(number_of_lines, direction, fadetime, linewidth);
+  //   break;
+  // }
 
-  case 4: // DONE
+  case 3: // DONE
   { // rotation with just a single color
     LED.freqdiv = 4;
     float width_angle = 2.0f * PI / 40.0f;
@@ -254,9 +266,9 @@ void setmode()
     break;
   }
 
-  case 5: // DONE
+  case 4: // DONE
   { // rainbow light switching
-    float blend_level = mapValue(0, 255, 0, 1, active_states[EXTRA1]);
+    float blend_level = mapValue(0, 255, 1, 0, active_states[EXTRA1]);
     int direction = 1; 
     LED.rainbow(blend_level, direction);
     break;
@@ -322,6 +334,12 @@ void LightsTaskcode(void *pvParameters)
 
       // set the motor
       setmotor();
+
+      // active_states[MODE] = 4;
+      // active_states[EXTRA1] = 0;
+      // active_states[BPM] = 120;
+      // active_states[DIM] = 0;
+      // active_states[DIMMER] = 255;
 
       // set dimmer value (should be between 0 and 1)
       LED.setDimmer((static_cast<float>(active_states[DIM])) / 255);

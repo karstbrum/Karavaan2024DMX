@@ -19,10 +19,10 @@ const int dmx_start_addr = 0;
 // DMX size (number of addresses)c
 const int num_used_scanners = 6;
 const int num_total_scanners = 12;
-const int channels_per_scanner = 16;
+const int channels_per_scanner = 32;
 
 // scanner to use for checking states
-const int state_scanner = 11; // 12
+const int state_scanner = 5; // 12
 
 // used dmx channels (except for scanner 12)
 const int dmx_size_total = num_total_scanners*channels_per_scanner;

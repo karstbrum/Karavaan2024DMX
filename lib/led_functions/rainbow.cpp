@@ -21,15 +21,13 @@ void Pixels::rainbow(float blend_level, int direction)
     // set sample time
     float Ts_ = Ts;
 
-    // count to 1 every 0.5 BPM / freqdiv
-    pulseIndex += direction * (Ts_ / 1000) * (BPM / 60) / freqdiv; // Ts*BPS (s^1 * s^-1)
+    // count to 1 every BPM / freqdiv
+    pulseIndex += static_cast<float>(direction) * (Ts_ / 1000) * (BPM / 60) / freqdiv; // Ts*BPS (s^1 * s^-1)
 
     // if pulseindex exceeds 1, select the cluster to light up
     if (pulseIndex > 1 || pulseIndex < 0)
     {
-
         pulseIndex -= direction;
-
     }
 
     // set the values for different colors
@@ -116,15 +114,26 @@ void Pixels::rainbow(float blend_level, int direction)
     max_color = green > max_color ? green : max_color;
     max_color = blue > max_color ? blue : max_color;
 
+    // guard for max color
+    max_color = max_color == 0 ? 1 : max_color;
+
     // define normalization factor
     // divide all colors by max color and multiply by 255
-    red = round(red / max_color * 255.0f);
-    green = round(green / max_color * 255.0f);
-    blue = round(blue / max_color * 255.0f);
+    red = floor(red / max_color * 255.0f);
+    green = floor(green / max_color * 255.0f);
+    blue = floor(blue / max_color * 255.0f);
 
+    float total_color = red + green + blue;
+    red = floor(red * 255.0/total_color);
+    green = floor(green * 255.0/total_color);
+    blue = floor(blue * 255.0/total_color);
+
+    // convert to int
     uint8_t red_i = static_cast<uint8_t>(red);
     uint8_t green_i = static_cast<uint8_t>(green);
     uint8_t blue_i = static_cast<uint8_t>(blue);
+
+    // Serial.printf("Red: (%.2f, %i), Green: (%.2f, %i), Blue: (%.2f, %i)\n", red, red_i, green, green_i, blue, blue_i);
 
     // overwrite color, don't use white
     Pixels::changeColor(0, red_i, green_i, blue_i);

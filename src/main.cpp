@@ -22,7 +22,7 @@ uint8_t send_to_address[] = {0xA8, 0x42, 0xE3, 0x8D, 0xB8, 0x01};
 uint8_t newMACAddress[] = {0xA8, 0x42, 0xE3, 0x8D, 0xB8, 0x05};
 
 // number of modes
-const int num_modes = 6; // to be defined
+const int num_modes = 5; // to be defined
 const float mode_selector = ceil(256.0 / num_modes);
 
 // scanner number
@@ -35,12 +35,15 @@ const int dmx_start_addr = 0;
 // DMX size (number of addresses)c
 const int num_used_scanners = 6;
 const int num_total_scanners = 12;
-const int channels_per_scanner = 16;
+const int channels_per_scanner = 32;
+const int check_channels_per_scanner = 16;
 
 // scanner to use for checking states
 const int state_scanner = 11; // 12
 
 // used dmx channels (except for scanner 12)
+// const int dmx_size_total = num_total_scanners*channels_per_scanner;
+// assume state scanner to be last to read
 const int dmx_size_total = num_total_scanners*channels_per_scanner;
 const int dmx_size_used = num_used_scanners*channels_per_scanner;
 
@@ -49,6 +52,7 @@ uint8_t dmx_data[dmx_size_total + 1];
 uint8_t received_states[dmx_size_total][4];
 
 // used states (numbers of channels + boolean on used scanner)
+// used states contains all dmx channel values and appended boolean for whether scanners are active
 uint8_t used_states[channels_per_scanner + num_used_scanners];
 
 // DMX pins (UART)
@@ -60,10 +64,10 @@ const int rts_pin = 21;
 const uint8_t MODE = 0;
 const uint8_t EXTRA1 = 1;
 const uint8_t BPM = 2;
-const uint8_t DIM = 3;
+const uint8_t COLOR = 3;
 const uint8_t DIMMER = 4;
-const uint8_t COLOR = 5;
-uint8_t active_states[16];
+const uint8_t DIM = 5;
+uint8_t active_states[channels_per_scanner];
 
 // previous mode for non direct switching
 // time should be on same mode (in ms)
@@ -178,20 +182,21 @@ void process_data()
 
         // if (changed 3 times || if changed to different than other side)
         // && sum of 3 changes > 2
-        int sum_changes = abs(received_states[state_scanner * channels_per_scanner + j][3] - received_states[state_scanner * channels_per_scanner + j][2]) + 
-                          abs(received_states[state_scanner * channels_per_scanner + j][2] - received_states[state_scanner * channels_per_scanner + j][1]) +
-                          abs(received_states[state_scanner * channels_per_scanner + j][1] - received_states[state_scanner * channels_per_scanner + j][0]);
-        if (((received_states[state_scanner * channels_per_scanner + j][3] != received_states[state_scanner * channels_per_scanner + j][2] &&
-              received_states[state_scanner * channels_per_scanner + j][2] != received_states[state_scanner * channels_per_scanner + j][1] &&
-              received_states[state_scanner * channels_per_scanner + j][1] != received_states[state_scanner * channels_per_scanner + j][0]) ||
-             (received_states[state_scanner * channels_per_scanner + j][0] != used_states[j + other_side] &&
-              received_states[state_scanner * channels_per_scanner + j][1] != received_states[state_scanner * channels_per_scanner + j][0])) &&
-              (sum_changes > 2))
-            {
+        // int sum_changes = abs(received_states[state_scanner * channels_per_scanner + j][3] - received_states[state_scanner * channels_per_scanner + j][2]) + 
+        //                   abs(received_states[state_scanner * channels_per_scanner + j][2] - received_states[state_scanner * channels_per_scanner + j][1]) +
+        //                   abs(received_states[state_scanner * channels_per_scanner + j][1] - received_states[state_scanner * channels_per_scanner + j][0]);
+        // if (((received_states[state_scanner * channels_per_scanner + j][3] != received_states[state_scanner * channels_per_scanner + j][2] &&
+        //       received_states[state_scanner * channels_per_scanner + j][2] != received_states[state_scanner * channels_per_scanner + j][1] &&
+        //       received_states[state_scanner * channels_per_scanner + j][1] != received_states[state_scanner * channels_per_scanner + j][0]) ||
+        //      (received_states[state_scanner * channels_per_scanner + j][0] != used_states[j + other_side] &&
+        //       received_states[state_scanner * channels_per_scanner + j][1] != received_states[state_scanner * channels_per_scanner + j][0])) &&
+        //       (sum_changes > 2))
+        //     {
 
-                used_states[j] = received_states[state_scanner * channels_per_scanner + j][0];
+        //         used_states[j] = received_states[state_scanner * channels_per_scanner + j][0];
 
-            }
+        //     }
+        used_states[j] = received_states[state_scanner * channels_per_scanner + j][0];
 
     }
 
@@ -201,7 +206,7 @@ void process_data()
         // set to false until value > 0 is found
         bool scanner_used = false;
 
-        for (int j = 0; j < channels_per_scanner; j++)
+        for (int j = 0; j < check_channels_per_scanner; j++)
         {
             scanner_used = scanner_used || dmx_data[i * channels_per_scanner + j + 1] > 0;
         }
@@ -269,6 +274,14 @@ void setColor()
   
   }
 
+  float total_color = r + g + b;
+  if (r + g + b > 300)
+  {
+    r = round(r * 300.0/total_color);
+    g = round(g * 300.0/total_color);
+    b = round(b * 300.0/total_color);
+  }
+
   LED.changeColor(w, r, g, b);
 
 }
@@ -334,20 +347,20 @@ void setmode()
       break;
     }
 
-    case 3: // DONE
-    {
-      // Lines move in carthesion up or down
-      LED.freqdiv = 4;
-      float linewidth = 0.05;
-      float fadetime = mapValue(0, 255, 0, 5, active_states[DIMMER]);
-      float slider_mapper = mapValue(0, 255, 0.5, 6.49, active_states[EXTRA1]);
-      uint8_t number_of_lines = (uint8_t)round(slider_mapper);
-      int direction = floor(slider_mapper) != round(slider_mapper) ? 2 : 4;
-      LED.movingLines(number_of_lines, direction, fadetime, linewidth);
-      break;
-    }
+    // case 3: // DONE
+    // {
+    //   // Lines move in carthesion up or down
+    //   LED.freqdiv = 4;
+    //   float linewidth = 0.05;
+    //   float fadetime = mapValue(0, 255, 0, 5, active_states[DIMMER]);
+    //   float slider_mapper = mapValue(0, 255, 0.5, 6.49, active_states[EXTRA1]);
+    //   uint8_t number_of_lines = (uint8_t)round(slider_mapper);
+    //   int direction = floor(slider_mapper) != round(slider_mapper) ? 2 : 4;
+    //   LED.movingLines(number_of_lines, direction, fadetime, linewidth);
+    //   break;
+    // }
 
-    case 4: // DONE
+    case 3: // DONE
     {
       // Lines move in carthesion to mimic rotation
       LED.freqdiv = 4;
@@ -360,7 +373,7 @@ void setmode()
       break;
     }
 
-    case 5: // DONE
+    case 4: // DONE
     { // rainbow light switching
       float blend_level = mapValue(0, 255, 0, 1, active_states[EXTRA1]);
       int direction = 1; 
@@ -514,7 +527,7 @@ void ControllerTaskcode(void *pvParameters)
         // process the data
         process_data();
 
-        // send data to discoball (use pointer to discostates array and define length of array)
+        // send data to discoball and spots (use pointer to discostates array and define length of array)
         esp_err_t send_status = esp_now_send(0, (uint8_t *)&used_states, channels_per_scanner + num_used_scanners);
 
         if (send_status == ESP_ERR_ESPNOW_NOT_FOUND)
